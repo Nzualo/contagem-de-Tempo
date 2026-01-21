@@ -3,19 +3,22 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 import calendar
 
-TAXA_CONTRIBUICAO = 0.07  # 7% (conforme regra/exemplo)
-DIAS_MES_ADMIN = 30       # diário = mensal/30 (regra administrativa)
+TAXA_CONTRIBUICAO = 0.07  # 7%
+DIAS_MES_ADMIN = 30       # diário = mensal/30
+
 
 @dataclass(frozen=True)
 class Periodo:
     inicio: date
     fim: date
 
+
 @dataclass(frozen=True)
 class TempoAMD:
     anos: int
     meses: int
     dias: int
+
 
 @dataclass(frozen=True)
 class Resultado:
@@ -39,6 +42,7 @@ class Resultado:
     encargo_dias: float
     encargo_total: float
 
+
 def _add_months(d: date, months: int) -> date:
     y = d.year + (d.month - 1 + months) // 12
     m = (d.month - 1 + months) % 12 + 1
@@ -46,8 +50,9 @@ def _add_months(d: date, months: int) -> date:
     day = min(d.day, last_day)
     return date(y, m, day)
 
+
 def diff_amd(start: date, end: date) -> TempoAMD:
-    """Diferença em Anos/Meses/Dias (AMD) no estilo calendário."""
+    """Diferença em Anos/Meses/Dias (AMD) estilo calendário."""
     if end < start:
         return TempoAMD(0, 0, 0)
 
@@ -72,10 +77,13 @@ def diff_amd(start: date, end: date) -> TempoAMD:
     days = (end - base).days
     return TempoAMD(years, months, days)
 
+
 def days_inclusive(d1: date, d2: date) -> int:
+    """Dias inclusivos (conta início e fim)."""
     if d2 < d1:
         return 0
     return (d2 - d1).days + 1
+
 
 def calcular(
     inicio_funcoes: date,
@@ -85,18 +93,15 @@ def calcular(
 ) -> Resultado:
     """
     Regras:
-      - Serviço: inicio_funcoes -> fim_funcoes
-      - Descontado: max(inicio_desconto, inicio_funcoes) -> fim_funcoes (se <= fim)
-      - Não descontado: inicio_funcoes -> (inicio_desconto_aj - 1 dia), ajustado ao fim
-      - Encargos: sobre tempo não descontado
-        mensal = salario_pensionavel * 7%
-        diário = mensal/30
-        meses_totais = anos*12 + meses
-        total = mensal*meses_totais + diário*dias
+      1) Serviço: início_funcoes -> fim_funcoes
+      2) Descontado: max(inicio_desconto, inicio_funcoes) -> fim_funcoes (se <= fim)
+      3) Não descontado: inicio_funcoes -> (inicio_desconto_aj - 1 dia)
+      4) Encargos: mensal=salário*7%; diário=mensal/30; meses=anos*12+meses; total=mensal*meses+diário*dias
     """
     if fim_funcoes < inicio_funcoes:
         raise ValueError("Fim de funções não pode ser anterior ao início de funções.")
 
+    # Ajuste: se início de desconto vier antes do início de funções, prende no início de funções
     inicio_desconto_aj = inicio_desconto if inicio_desconto >= inicio_funcoes else inicio_funcoes
 
     # Serviço
@@ -114,21 +119,27 @@ def calcular(
         descontado_dias = days_inclusive(inicio_desconto_aj, fim_funcoes)
         descontado_amd = diff_amd(inicio_desconto_aj, fim_funcoes)
 
-    # Não descontado
+    # Não descontado (robusto)
     fim_nao_desc = inicio_desconto_aj - timedelta(days=1)
-    if fim_nao_desc < inicio_funcoes:
+
+    if inicio_desconto_aj <= inicio_funcoes:
         periodo_nao_descontado = None
         nao_descontado_dias = 0
         nao_descontado_amd = TempoAMD(0, 0, 0)
     else:
         fim_nao_desc_real = min(fim_nao_desc, fim_funcoes)
-        periodo_nao_descontado = Periodo(inicio_funcoes, fim_nao_desc_real)
-        nao_descontado_dias = days_inclusive(inicio_funcoes, fim_nao_desc_real)
-        nao_descontado_amd = diff_amd(inicio_funcoes, fim_nao_desc_real)
+        if fim_nao_desc_real < inicio_funcoes:
+            periodo_nao_descontado = None
+            nao_descontado_dias = 0
+            nao_descontado_amd = TempoAMD(0, 0, 0)
+        else:
+            periodo_nao_descontado = Periodo(inicio_funcoes, fim_nao_desc_real)
+            nao_descontado_dias = days_inclusive(inicio_funcoes, fim_nao_desc_real)
+            nao_descontado_amd = diff_amd(inicio_funcoes, fim_nao_desc_real)
 
     # Encargos
-    salario_pensionavel_f = float(salario_pensionavel)
-    valor_mensal = salario_pensionavel_f * TAXA_CONTRIBUICAO
+    sp = float(salario_pensionavel)
+    valor_mensal = sp * TAXA_CONTRIBUICAO
     valor_diario = valor_mensal / float(DIAS_MES_ADMIN)
 
     meses_totais = nao_descontado_amd.anos * 12 + nao_descontado_amd.meses
@@ -146,7 +157,7 @@ def calcular(
         servico_dias=servico_dias,
         descontado_dias=descontado_dias,
         nao_descontado_dias=nao_descontado_dias,
-        salario_pensionavel=salario_pensionavel_f,
+        salario_pensionavel=sp,
         valor_mensal=valor_mensal,
         valor_diario=valor_diario,
         meses_totais_cobranca=meses_totais,
@@ -155,22 +166,22 @@ def calcular(
         encargo_total=encargo_total,
     )
 
-def plano_prestacoes(encargo_total: float, remuneracao_ou_pensao: float, max_prestacoes: int = 60):
-    """
-    Até 60 prestações e prestação <= 1/3 da remuneração/pensão.
-    Retorna dict com sugestão (n mínimo que cumpre).
-    """
-    if encargo_total <= 0:
-        return {"ok": True, "prestacoes": 0, "valor": 0.0, "limite": remuneracao_ou_pensao / 3.0 if remuneracao_ou_pensao > 0 else 0.0, "motivo": ""}
 
+def sugerir_min_prestacoes(encargo_total: float, remuneracao_ou_pensao: float, max_prestacoes: int = 60) -> int | None:
+    """Menor n (1..60) tal que total/n <= (rem/3)."""
+    if encargo_total <= 0:
+        return 0
     if remuneracao_ou_pensao <= 0:
-        return {"ok": False, "prestacoes": None, "valor": None, "limite": 0.0, "motivo": "Informe remuneração/pensão para aplicar limite de 1/3."}
+        return None
 
     limite = remuneracao_ou_pensao / 3.0
     for n in range(1, max_prestacoes + 1):
-        v = encargo_total / n
-        if v <= limite + 1e-9:
-            return {"ok": True, "prestacoes": n, "valor": v, "limite": limite, "motivo": ""}
+        if (encargo_total / n) <= limite + 1e-9:
+            return n
+    return max_prestacoes
 
-    return {"ok": False, "prestacoes": max_prestacoes, "valor": encargo_total / max_prestacoes, "limite": limite,
-            "motivo": "Mesmo com 60 prestações, excede 1/3 da remuneração/pensão."}
+
+def calcular_prestacao(encargo_total: float, n_prestacoes: int) -> float:
+    if n_prestacoes <= 0:
+        return 0.0
+    return encargo_total / float(n_prestacoes)
