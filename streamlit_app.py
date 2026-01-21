@@ -1,40 +1,53 @@
+import os
 import streamlit as st
 from datetime import date
 from dotenv import load_dotenv
 
-from services.calculos import calcular, plano_prestacoes
+from services.calculos import (
+    calcular,
+    sugerir_min_prestacoes,
+    calcular_prestacao,
+)
 from services.supabase_client import get_supabase
+from services.pdf_export import generate_certidao_pdf
 
 load_dotenv()
 
-# ======= CONFIG =======
 st.set_page_config(page_title="Efetividade do Funcionário", layout="wide")
-st.title("App de Efetividade do Funcionário")
+st.title("Efetividade do Funcionário")
 
-# ⚠️ Tabela no Supabase (a sua tem espaço)
-TABLE_NAME = "Contagem de Tempo"  # se renomear: "contagem_tempo"
+# Sua tabela no Supabase (pode ter espaço)
+TABLE_NAME = "Contagem de Tempo"
+TEMPLATE_PATH = os.path.join("assets", "template_certidao.pdf")
 
-# ======= SIDEBAR =======
+# =========================
+# SIDEBAR (inputs)
+# =========================
 with st.sidebar:
     st.header("Dados-base")
 
-    nome = st.text_input("Nome do funcionário", value="Ex.: Sr. Almeida Cossa")
+    nome = st.text_input("Nome do funcionário", value="")
 
-    inicio_funcoes = st.date_input("Início de funções", value=date(1996, 9, 8))
-    fim_funcoes = st.date_input("Fim (último dia) de funções", value=date(2022, 11, 30))
-    inicio_desconto = st.date_input("Início do desconto (nomeação provisória / início no sistema)", value=date(1998, 4, 23))
+    inicio_funcoes = st.date_input("Início de funções", value=date(2017, 2, 28))
+    fim_funcoes = st.date_input("Fim (último dia) de funções", value=date.today())
+    inicio_desconto = st.date_input("Início do desconto (nomeação provisória / início no sistema)", value=date(2017, 6, 30))
 
     st.divider()
     st.header("Encargos (LESSOFE)")
 
-    salario_pensionavel = st.number_input("Última remuneração pensionável (Mt)", min_value=0.0, value=10758.00, step=10.0)
-    remuneracao_ou_pensao = st.number_input("Remuneração/Pensão p/ limite 1/3 (Mt)", min_value=0.0, value=10758.00, step=10.0)
+    salario_pensionavel = st.number_input("Última remuneração pensionável (Mt)", min_value=0.0, value=19258.00, step=10.0)
+    remuneracao_ou_pensao = st.number_input("Remuneração/Pensão p/ limite 1/3 (Mt)", min_value=0.0, value=19258.00, step=10.0)
 
     st.divider()
-    st.header("Base de dados")
+    st.header("Supabase")
     gravar = st.checkbox("Gravar no Supabase", value=True)
 
-# ======= CÁLCULO CENTRAL =======
+    # Debug para evitar confusão de datas
+    st.caption(f"DEBUG: inicio_funcoes={inicio_funcoes} | inicio_desconto={inicio_desconto} | fim_funcoes={fim_funcoes}")
+
+# =========================
+# CÁLCULO CENTRAL
+# =========================
 try:
     res = calcular(
         inicio_funcoes=inicio_funcoes,
@@ -46,14 +59,14 @@ except ValueError as e:
     st.error(str(e))
     st.stop()
 
-plano = plano_prestacoes(res.encargo_total, remuneracao_ou_pensao, max_prestacoes=60)
-
-# ======= ABAS =======
+# =========================
+# ABAS
+# =========================
 tab1, tab2, tab3, tab4 = st.tabs([
     "Tempo de serviço",
     "Tempo descontado",
     "Tempo não descontado",
-    "Fixação de encargos"
+    "Fixação de encargos",
 ])
 
 with tab1:
@@ -82,6 +95,7 @@ with tab3:
         st.success("Não existe tempo não descontado neste caso.")
     else:
         st.info(f"Período: {res.periodo_nao_descontado.inicio} → {res.periodo_nao_descontado.fim}")
+
     c1, c2 = st.columns(2)
     c1.metric("Total (dias)", res.nao_descontado_dias)
     c2.metric("Total (A/M/D)", f"{res.nao_descontado_amd.anos}A {res.nao_descontado_amd.meses}M {res.nao_descontado_amd.dias}D")
@@ -102,17 +116,105 @@ with tab4:
     st.write(f"- Encargo (meses): **{res.encargo_meses:,.2f} Mt**")
     st.write(f"- Encargo (dias): **{res.encargo_dias:,.2f} Mt**")
 
-    st.write("### Plano de prestações (até 60; prestação ≤ 1/3)")
-    st.write(f"- Limite por prestação (1/3): **{plano['limite']:,.2f} Mt**")
-    if plano["ok"]:
-        st.write(f"- Nº prestações sugerido: **{plano['prestacoes']}**")
-        st.write(f"- Valor por prestação: **{plano['valor']:,.2f} Mt**")
-    else:
-        st.error(plano["motivo"])
-        if plano["prestacoes"]:
-            st.write(f"Com {plano['prestacoes']} prestações: **{plano['valor']:,.2f} Mt**")
+    st.divider()
+    st.write("## Escolha de prestações e PDF (modelo oficial)")
 
-# ======= GRAVAÇÃO NO SUPABASE =======
+    # campos do topo do formulário
+    colA, colB, colC = st.columns(3)
+    with colA:
+        categoria = st.text_input("Categoria", value="")
+    with colB:
+        classe = st.text_input("Classe", value="")
+    with colC:
+        escalao = st.text_input("Escalão", value="")
+
+    if res.encargo_total <= 0:
+        st.info("Encargo total é 0. Não há prestações nem PDF de encargos.")
+        n_prestacoes = 0
+        valor_prest = 0.0
+    else:
+        limite = (remuneracao_ou_pensao / 3.0) if remuneracao_ou_pensao > 0 else 0.0
+        if remuneracao_ou_pensao > 0:
+            st.write(f"Limite por prestação (1/3): **{limite:,.2f} Mt**")
+        else:
+            st.warning("Informe Remuneração/Pensão para validar a regra de 1/3.")
+
+        min_sugerido = sugerir_min_prestacoes(res.encargo_total, remuneracao_ou_pensao, max_prestacoes=60)
+        if isinstance(min_sugerido, int) and min_sugerido > 0:
+            st.info(f"Sugestão (mínimo que cumpre 1/3): **{min_sugerido}** prestações.")
+
+        n_prestacoes = st.slider(
+            "Quantas prestações o funcionário quer pagar?",
+            min_value=1,
+            max_value=60,
+            value=min_sugerido if (isinstance(min_sugerido, int) and min_sugerido not in (None, 0)) else 12,
+            step=1
+        )
+
+        valor_prest = calcular_prestacao(res.encargo_total, n_prestacoes)
+        st.write(f"Prestação: **{n_prestacoes}x** de **{valor_prest:,.2f} Mt**")
+
+        if remuneracao_ou_pensao > 0:
+            if valor_prest > limite + 1e-9:
+                st.error("⚠️ A prestação escolhida excede 1/3 da remuneração/pensão. Aumente o nº de prestações.")
+            else:
+                st.success("✅ A prestação escolhida cumpre a regra de 1/3.")
+
+    st.divider()
+    st.write("### Gerar PDF (modelo do formulário)")
+
+    if not os.path.exists(TEMPLATE_PATH):
+        st.error(f"Template não encontrado em: {TEMPLATE_PATH}. Coloque o PDF do formulário em assets/template_certidao.pdf")
+    else:
+        if st.button("📄 Gerar PDF para download"):
+            if res.periodo_nao_descontado is None:
+                nd_inicio = None
+                nd_fim = None
+            else:
+                nd_inicio = res.periodo_nao_descontado.inicio
+                nd_fim = res.periodo_nao_descontado.fim
+
+            pdf_bytes = generate_certidao_pdf(
+                template_pdf_path=TEMPLATE_PATH,
+
+                nome=nome,
+                categoria=categoria,
+                classe=classe,
+                escalao=escalao,
+
+                inicio_funcoes=inicio_funcoes,
+                fim_funcoes=fim_funcoes,
+                serv_anos=res.servico_amd.anos,
+                serv_meses=res.servico_amd.meses,
+                serv_dias=res.servico_amd.dias,
+
+                nd_inicio=nd_inicio,
+                nd_fim=nd_fim,
+                nd_anos=res.nao_descontado_amd.anos,
+                nd_meses=res.nao_descontado_amd.meses,
+                nd_dias=res.nao_descontado_amd.dias,
+
+                salario_pensionavel=float(salario_pensionavel),
+                valor_mensal=float(res.valor_mensal),
+                valor_diario=float(res.valor_diario),
+                encargo_meses=float(res.encargo_meses),
+                encargo_dias=float(res.encargo_dias),
+                encargo_total=float(res.encargo_total),
+
+                n_prestacoes=int(n_prestacoes) if res.encargo_total > 0 else 0,
+                valor_prestacao=float(valor_prest) if res.encargo_total > 0 else 0.0,
+            )
+
+            st.download_button(
+                label="⬇️ Baixar PDF",
+                data=pdf_bytes,
+                file_name="certidao_efetividade_encargos.pdf",
+                mime="application/pdf"
+            )
+
+# =========================
+# GRAVAR NO SUPABASE
+# =========================
 st.divider()
 st.subheader("Gravar registo")
 
@@ -122,9 +224,6 @@ if gravar:
         st.warning("Supabase não configurado. Defina SUPABASE_URL e SUPABASE_ANON_KEY nos Secrets do Streamlit.")
     else:
         if st.button("💾 Guardar no Supabase"):
-            # IMPORTANTE:
-            # Estes nomes de colunas precisam existir na tabela no Supabase.
-            # Se a sua tabela tiver colunas diferentes, ajuste o payload aqui para bater com elas.
             payload = {
                 "nome": nome,
                 "inicio_funcoes": str(inicio_funcoes),
@@ -157,6 +256,13 @@ if gravar:
                 "encargo_meses": float(res.encargo_meses),
                 "encargo_dias": float(res.encargo_dias),
                 "encargo_total": float(res.encargo_total),
+
+                # Se você criar estas colunas no Supabase, pode guardar também:
+                # "prestacoes_escolhidas": int(n_prestacoes),
+                # "valor_prestacao_escolhida": float(valor_prest),
+                # "categoria": categoria,
+                # "classe": classe,
+                # "escalao": escalao,
             }
 
             try:
@@ -166,4 +272,4 @@ if gravar:
                 st.error("Falha ao guardar no Supabase.")
                 st.code(str(e))
 else:
-    st.info("Gravação no Supabase está desativada.")
+    st.info("Gravação no Supabase desativada.")
