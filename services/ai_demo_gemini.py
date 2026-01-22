@@ -1,55 +1,51 @@
 from __future__ import annotations
 
 import os
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from google import genai
 from pydantic import BaseModel, Field, ValidationError
 
 
 class DemoResponse(BaseModel):
-    lines: List[str] = Field(description="Linhas da DEMONSTRAÇÃO no estilo da certidão (máx. 8 linhas).")
+    lines: List[str] = Field(
+        description="Linhas curtas para a secção DEMONSTRAÇÃO (máx. 8)."
+    )
 
 
 def _build_prompt(data: Dict[str, Any]) -> str:
-    """
-    IMPORTANTÍSSIMO:
-    - A IA NÃO pode inventar números.
-    - Ela deve apenas formatar/explicar usando os valores fornecidos.
-    """
     return f"""
-Você é um técnico que preenche certidões de contagem de tempo e demonstração de encargos (LESSSOFE).
-Gere SOMENTE a secção 'DEMONSTRAÇÃO' no mesmo estilo do exemplo manuscrito (linhas curtas).
+Você é um técnico que preenche a secção "DEMONSTRAÇÃO" da certidão de contagem de tempo e fixação de encargos (LESSSOFE).
 
-REGRAS CRÍTICAS:
-1) Use EXCLUSIVAMENTE os números e datas fornecidos em DADOS.
-2) NÃO crie, NÃO estime, NÃO arredonde diferente.
-3) Se algum valor estiver ausente, escreva "—" no lugar.
-4) Produza no máximo 8 linhas (para caber no quadro).
-5) Use formatação PT: vírgula decimal e ponto para milhar (ex.: 60.464,26).
-6) Mantenha a sequência típica:
-   - A/M/D e conversão para meses + dias (A*12 + M = meses; dias separados)
-   - salário × 7% = valor mensal
-   - valor mensal × meses = encargo meses
-   - valor mensal/30 = diário; diário × dias = encargo dias
+OBJETIVO:
+- Produzir linhas no estilo manuscrito do exemplo (curtas, com 'x 12', '=/30', 'TOTAL', 'prestações').
+
+REGRAS CRÍTICAS (obrigatórias):
+1) Use EXCLUSIVAMENTE os números fornecidos em DADOS. NÃO invente, NÃO estime.
+2) NÃO altere os resultados. NÃO arredonde diferente.
+3) Máximo 8 linhas.
+4) Formato PT: ponto milhar e vírgula decimal (ex.: 60.464,26).
+5) Sequência sugerida:
+   - A/M/D e conversão (A×12 + M = meses; dias = D)
+   - Salário × 7% = mensal
+   - Mensal × meses = encargo meses
+   - Mensal/30 = diário; diário × dias = encargo dias
    - TOTAL
-   - prestações: n; 1ª; restantes
+   - Prestações: n; 1ª; restantes
 
-DADOS (não invente nada):
-- TSND (A/M/D): {data.get("nd_anos")} / {data.get("nd_meses")} / {data.get("nd_dias")}
-- Meses totais (A*12 + M): {data.get("meses_totais")}
-- Dias (D): {data.get("nd_dias")}
-- Salário pensionável: {data.get("salario_pensionavel_fmt")}
-- Percentagem: 7%
-- Valor mensal (7%): {data.get("valor_mensal_fmt")}
-- Encargo meses: {data.get("encargo_meses_fmt")}
-- Valor diário (mensal/30): {data.get("valor_diario_fmt")}
-- Encargo dias: {data.get("encargo_dias_fmt")}
-- TOTAL: {data.get("encargo_total_fmt")}
-- Prestações: {data.get("n_prestacoes")}
-- Valor por prestação: {data.get("valor_prestacao_fmt")}
+DADOS:
+- TSND (A/M/D): A={data["nd_anos"]} M={data["nd_meses"]} D={data["nd_dias"]}
+- Meses totais: {data["meses_totais"]}
+- Salário pensionável: {data["salario_pensionavel_fmt"]}
+- Valor mensal (7%): {data["valor_mensal_fmt"]}
+- Encargo meses: {data["encargo_meses_fmt"]}
+- Valor diário: {data["valor_diario_fmt"]}
+- Encargo dias: {data["encargo_dias_fmt"]}
+- TOTAL: {data["encargo_total_fmt"]}
+- Prestações: {data["n_prestacoes"]}
+- Valor prestação: {data["valor_prestacao_fmt"]}
 
-Agora devolva apenas as linhas da DEMONSTRAÇÃO.
+DEVOLVA APENAS JSON no schema pedido (campo "lines").
 """.strip()
 
 
@@ -58,15 +54,15 @@ def generate_demo_lines_with_gemini(
     data: Dict[str, Any],
     model: Optional[str] = None,
     api_key: Optional[str] = None,
-    max_output_tokens: int = 350,
+    max_output_tokens: int = 400,
 ) -> List[str]:
     """
-    Retorna linhas para a caixa 'DEMONSTRAÇÃO' do PDF.
-    Se falhar, levanta exceção para o chamador aplicar fallback.
+    Gera linhas de demonstração com Gemini, usando structured output.
+    Se falhar, levanta exceção e o caller aplica fallback.
     """
-    api_key = api_key or os.getenv("GEMINI_API_KEY")
+    api_key = api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise RuntimeError("GEMINI_API_KEY não definido (Streamlit Secrets / env).")
+        raise RuntimeError("API Key não definida. Use GOOGLE_API_KEY (ou GEMINI_API_KEY).")
 
     model = model or os.getenv("GEMINI_MODEL") or "gemini-2.5-pro"
 
@@ -74,7 +70,6 @@ def generate_demo_lines_with_gemini(
 
     prompt = _build_prompt(data)
 
-    # Structured output via JSON schema (Pydantic)
     resp = client.models.generate_content(
         model=model,
         contents=prompt,
@@ -88,11 +83,11 @@ def generate_demo_lines_with_gemini(
     try:
         parsed = DemoResponse.model_validate_json(resp.text)
     except ValidationError as e:
-        raise RuntimeError(f"Resposta IA inválida (schema). Detalhe: {e}")
+        raise RuntimeError(f"Resposta IA inválida (schema). {e}")
 
-    # Normalização: remove linhas vazias, corta comprimento extremo
     lines = [ln.strip() for ln in parsed.lines if ln and ln.strip()]
     lines = lines[:8]
+
     if not lines:
         raise RuntimeError("IA devolveu demonstração vazia.")
 
