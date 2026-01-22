@@ -16,13 +16,9 @@ load_dotenv()
 st.set_page_config(page_title="Efetividade do Funcionário", layout="wide")
 st.title("Efetividade do Funcionário")
 
-# Sua tabela no Supabase (pode ter espaço)
 TABLE_NAME = "Contagem de Tempo"
 TEMPLATE_PATH = os.path.join("assets", "template_certidao.pdf")
 
-# =========================
-# SIDEBAR (inputs)
-# =========================
 with st.sidebar:
     st.header("Dados-base")
 
@@ -34,7 +30,6 @@ with st.sidebar:
 
     st.divider()
     st.header("Encargos (LESSOFE)")
-
     salario_pensionavel = st.number_input("Última remuneração pensionável (Mt)", min_value=0.0, value=19258.00, step=10.0)
     remuneracao_ou_pensao = st.number_input("Remuneração/Pensão p/ limite 1/3 (Mt)", min_value=0.0, value=19258.00, step=10.0)
 
@@ -42,12 +37,9 @@ with st.sidebar:
     st.header("Supabase")
     gravar = st.checkbox("Gravar no Supabase", value=True)
 
-    # Debug para evitar confusão de datas
     st.caption(f"DEBUG: inicio_funcoes={inicio_funcoes} | inicio_desconto={inicio_desconto} | fim_funcoes={fim_funcoes}")
 
-# =========================
-# CÁLCULO CENTRAL
-# =========================
+# Cálculo
 try:
     res = calcular(
         inicio_funcoes=inicio_funcoes,
@@ -59,9 +51,6 @@ except ValueError as e:
     st.error(str(e))
     st.stop()
 
-# =========================
-# ABAS
-# =========================
 tab1, tab2, tab3, tab4 = st.tabs([
     "Tempo de serviço",
     "Tempo descontado",
@@ -95,7 +84,6 @@ with tab3:
         st.success("Não existe tempo não descontado neste caso.")
     else:
         st.info(f"Período: {res.periodo_nao_descontado.inicio} → {res.periodo_nao_descontado.fim}")
-
     c1, c2 = st.columns(2)
     c1.metric("Total (dias)", res.nao_descontado_dias)
     c2.metric("Total (A/M/D)", f"{res.nao_descontado_amd.anos}A {res.nao_descontado_amd.meses}M {res.nao_descontado_amd.dias}D")
@@ -117,9 +105,8 @@ with tab4:
     st.write(f"- Encargo (dias): **{res.encargo_dias:,.2f} Mt**")
 
     st.divider()
-    st.write("## Escolha de prestações e PDF (modelo oficial)")
+    st.write("## Prestações e PDF (modelo oficial)")
 
-    # campos do topo do formulário
     colA, colB, colC = st.columns(3)
     with colA:
         categoria = st.text_input("Categoria", value="")
@@ -150,7 +137,6 @@ with tab4:
             value=min_sugerido if (isinstance(min_sugerido, int) and min_sugerido not in (None, 0)) else 12,
             step=1
         )
-
         valor_prest = calcular_prestacao(res.encargo_total, n_prestacoes)
         st.write(f"Prestação: **{n_prestacoes}x** de **{valor_prest:,.2f} Mt**")
 
@@ -161,12 +147,16 @@ with tab4:
                 st.success("✅ A prestação escolhida cumpre a regra de 1/3.")
 
     st.divider()
-    st.write("### Gerar PDF (modelo do formulário)")
+    st.write("### Gerar PDF (com demonstração completa)")
 
     if not os.path.exists(TEMPLATE_PATH):
-        st.error(f"Template não encontrado em: {TEMPLATE_PATH}. Coloque o PDF do formulário em assets/template_certidao.pdf")
+        st.error("Template não encontrado. Coloque o PDF do formulário em assets/template_certidao.pdf")
     else:
         if st.button("📄 Gerar PDF para download"):
+            if not nome.strip():
+                st.error("Informe o Nome do funcionário antes de gerar o PDF.")
+                st.stop()
+
             if res.periodo_nao_descontado is None:
                 nd_inicio = None
                 nd_fim = None
@@ -184,6 +174,7 @@ with tab4:
 
                 inicio_funcoes=inicio_funcoes,
                 fim_funcoes=fim_funcoes,
+
                 serv_anos=res.servico_amd.anos,
                 serv_meses=res.servico_amd.meses,
                 serv_dias=res.servico_amd.dias,
@@ -197,6 +188,8 @@ with tab4:
                 salario_pensionavel=float(salario_pensionavel),
                 valor_mensal=float(res.valor_mensal),
                 valor_diario=float(res.valor_diario),
+
+                meses_totais=int(res.meses_totais_cobranca),
                 encargo_meses=float(res.encargo_meses),
                 encargo_dias=float(res.encargo_dias),
                 encargo_total=float(res.encargo_total),
@@ -212,9 +205,6 @@ with tab4:
                 mime="application/pdf"
             )
 
-# =========================
-# GRAVAR NO SUPABASE
-# =========================
 st.divider()
 st.subheader("Gravar registo")
 
@@ -257,7 +247,7 @@ if gravar:
                 "encargo_dias": float(res.encargo_dias),
                 "encargo_total": float(res.encargo_total),
 
-                # Se você criar estas colunas no Supabase, pode guardar também:
+                # opcionais se você criar colunas:
                 # "prestacoes_escolhidas": int(n_prestacoes),
                 # "valor_prestacao_escolhida": float(valor_prest),
                 # "categoria": categoria,
