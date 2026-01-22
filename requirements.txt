@@ -2,3 +2,5 @@ streamlit==1.37.1
 python-dotenv==1.0.1
 supabase==2.6.0
 reportlab==4.2.5
+google-genai
+pydantic
