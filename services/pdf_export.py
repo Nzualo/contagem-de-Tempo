@@ -232,3 +232,45 @@ def generate_certidao_pdf_clean(
         _txt(c, amd_x2 + 2 * cw2 + 6, y1e, f"{nd_dias:02d}", 10, False)
 
         y2e = y1e - t2["row_h"]
+        _txt(c, t2["x"] + t2["col_obs"] + 6, y2e, _fmt_date(nd_fim), 10, False)
+        _txt(c, amd_x2 + 6, y2e, "00", 10, False)
+        _txt(c, amd_x2 + cw2 + 6, y2e, "00", 10, False)
+        _txt(c, amd_x2 + 2 * cw2 + 6, y2e, "00", 10, False)
+    else:
+        _txt(c, amd_x2 + 6, y1e, "00", 10, False)
+        _txt(c, amd_x2 + cw2 + 6, y1e, "00", 10, False)
+        _txt(c, amd_x2 + 2 * cw2 + 6, y1e, "00", 10, False)
+
+    # DEMONSTRAÇÃO
+    demo = _draw_demo_box(c, x=40, y=60, w=PAGE_W - 80, h=170)
+
+    if not demo_lines:
+        # fallback determinístico
+        demo_lines = [
+            f"A{nd_anos:02d}.. M{nd_meses:02d}.. D{nd_dias:02d}  →  ({nd_anos:02d}×12 + {nd_meses:02d}) = {meses_totais} meses e {nd_dias} dias",
+            f"{_money_pt(salario_pensionavel)} × 7% = {_money_pt(valor_mensal)}",
+            f"{_money_pt(valor_mensal)} × {meses_totais} = {_money_pt(encargo_meses)}",
+            f"{_money_pt(valor_mensal)} / 30 = {_money_pt(valor_diario)} ; {_money_pt(valor_diario)} × {nd_dias} = {_money_pt(encargo_dias)}",
+            f"TOTAL: {_money_pt(encargo_meses)} + {_money_pt(encargo_dias)} = {_money_pt(encargo_total)}",
+            f"{n_prestacoes} prestações | 1ª: {_money_pt(valor_prestacao)} Mt | restantes: {_money_pt(valor_prestacao)} Mt",
+        ]
+
+    # escreve com wrap para não estourar
+    left = demo["x"] + 15
+    right = demo["x"] + demo["w"] - 15
+    maxw = right - left
+    y = demo["top"] - demo["gap"] + 4
+
+    c.setFont("Helvetica", 9)
+    for raw in demo_lines[:8]:
+        wrapped = _wrap_text(c, raw, maxw, font_name="Helvetica", font_size=9)
+        for ln in wrapped:
+            _txt(c, left, y, ln, 9, False)
+            y -= demo["gap"] * 0.75
+        y -= 2  # pequeno espaçamento extra
+
+    c.showPage()
+    c.save()
+
+    buf.seek(0)
+    return buf.getvalue()
