@@ -1,6 +1,10 @@
-streamlit==1.37.1
-python-dotenv==1.0.1
-supabase==2.6.0
-reportlab==4.2.5
-google-genai==1.30.0
-pydantic==2.8.2
+streamlit>=1.37,<2
+python-dotenv>=1.0,<2
+supabase>=2.6,<3
+reportlab>=4.2,<5
+
+# Gemini SDK oficial (instalação recomendada)
+google-genai>=1.0,<2
+
+# Structured output / validação
+pydantic>=2.8,<3
