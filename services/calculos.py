@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 import calendar
 
-TAXA_CONTRIBUICAO = 0.07  # 7%
-DIAS_MES_ADMIN = 30       # diário = mensal/30
+TAXA_CONTRIBUICAO = 0.07
+DIAS_MES_ADMIN = 30
 
 
 @dataclass(frozen=True)
@@ -52,7 +52,6 @@ def _add_months(d: date, months: int) -> date:
 
 
 def diff_amd(start: date, end: date) -> TempoAMD:
-    """Diferença em Anos/Meses/Dias (AMD) estilo calendário."""
     if end < start:
         return TempoAMD(0, 0, 0)
 
@@ -79,29 +78,15 @@ def diff_amd(start: date, end: date) -> TempoAMD:
 
 
 def days_inclusive(d1: date, d2: date) -> int:
-    """Dias inclusivos (conta início e fim)."""
     if d2 < d1:
         return 0
     return (d2 - d1).days + 1
 
 
-def calcular(
-    inicio_funcoes: date,
-    fim_funcoes: date,
-    inicio_desconto: date,
-    salario_pensionavel: float,
-) -> Resultado:
-    """
-    Regras:
-      1) Serviço: início_funcoes -> fim_funcoes
-      2) Descontado: max(inicio_desconto, inicio_funcoes) -> fim_funcoes (se <= fim)
-      3) Não descontado: inicio_funcoes -> (inicio_desconto_aj - 1 dia)
-      4) Encargos: mensal=salário*7%; diário=mensal/30; meses=anos*12+meses; total=mensal*meses+diário*dias
-    """
+def calcular(inicio_funcoes: date, fim_funcoes: date, inicio_desconto: date, salario_pensionavel: float) -> Resultado:
     if fim_funcoes < inicio_funcoes:
         raise ValueError("Fim de funções não pode ser anterior ao início de funções.")
 
-    # Ajuste: se início de desconto vier antes do início de funções, prende no início de funções
     inicio_desconto_aj = inicio_desconto if inicio_desconto >= inicio_funcoes else inicio_funcoes
 
     # Serviço
@@ -121,7 +106,6 @@ def calcular(
 
     # Não descontado (robusto)
     fim_nao_desc = inicio_desconto_aj - timedelta(days=1)
-
     if inicio_desconto_aj <= inicio_funcoes:
         periodo_nao_descontado = None
         nao_descontado_dias = 0
@@ -168,7 +152,6 @@ def calcular(
 
 
 def sugerir_min_prestacoes(encargo_total: float, remuneracao_ou_pensao: float, max_prestacoes: int = 60) -> int | None:
-    """Menor n (1..60) tal que total/n <= (rem/3)."""
     if encargo_total <= 0:
         return 0
     if remuneracao_ou_pensao <= 0:
