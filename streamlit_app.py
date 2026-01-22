@@ -23,6 +23,10 @@ st.title("Efetividade do Funcionário")
 
 TABLE_NAME = "Contagem de Tempo"
 
+# Cache (evita gastar quota repetindo o mesmo pedido)
+if "demo_cache" not in st.session_state:
+    st.session_state["demo_cache"] = {}
+
 with st.sidebar:
     st.header("Dados-base")
     nome = st.text_input("Nome do funcionário", value="")
@@ -59,8 +63,7 @@ with st.sidebar:
     st.divider()
     st.header("IA (Opcional)")
     usar_ia = st.checkbox("Usar IA (Gemini) na DEMONSTRAÇÃO do PDF", value=True)
-    gemini_model = st.text_input("Modelo Gemini", value="gemini-2.5-pro")
-
+    gemini_model = st.text_input("Modelo Gemini (preferido)", value="gemini-2.5-pro")
     st.caption("Configure GOOGLE_API_KEY (ou GEMINI_API_KEY) nos Secrets do Streamlit.")
 
     st.divider()
@@ -88,7 +91,10 @@ with tab1:
     st.info(f"Período: {res.periodo_servico.inicio} → {res.periodo_servico.fim}")
     c1, c2 = st.columns(2)
     c1.metric("Total (dias)", res.servico_dias)
-    c2.metric("Total (A/M/D)", f"{res.servico_amd.anos}A {res.servico_amd.meses}M {res.servico_amd.dias}D")
+    c2.metric(
+        "Total (A/M/D)",
+        f"{res.servico_amd.anos}A {res.servico_amd.meses}M {res.servico_amd.dias}D",
+    )
 
 with tab2:
     st.subheader("Tempo descontado (contribuição)")
@@ -98,7 +104,10 @@ with tab2:
         st.info(f"Período: {res.periodo_descontado.inicio} → {res.periodo_descontado.fim}")
     c1, c2 = st.columns(2)
     c1.metric("Total (dias)", res.descontado_dias)
-    c2.metric("Total (A/M/D)", f"{res.descontado_amd.anos}A {res.descontado_amd.meses}M {res.descontado_amd.dias}D")
+    c2.metric(
+        "Total (A/M/D)",
+        f"{res.descontado_amd.anos}A {res.descontado_amd.meses}M {res.descontado_amd.dias}D",
+    )
 
 with tab3:
     st.subheader("Tempo não descontado")
@@ -108,7 +117,10 @@ with tab3:
         st.info(f"Período: {res.periodo_nao_descontado.inicio} → {res.periodo_nao_descontado.fim}")
     c1, c2 = st.columns(2)
     c1.metric("Total (dias)", res.nao_descontado_dias)
-    c2.metric("Total (A/M/D)", f"{res.nao_descontado_amd.anos}A {res.nao_descontado_amd.meses}M {res.nao_descontado_amd.dias}D")
+    c2.metric(
+        "Total (A/M/D)",
+        f"{res.nao_descontado_amd.anos}A {res.nao_descontado_amd.meses}M {res.nao_descontado_amd.dias}D",
+    )
 
 with tab4:
     st.subheader("Fixação e pagamento de encargos (LESSOFE)")
@@ -133,8 +145,9 @@ with tab4:
 
         n_prestacoes = st.slider(
             "Quantas prestações quer pagar?",
-            1, 60,
-            value=min_sugerido if isinstance(min_sugerido, int) and min_sugerido > 0 else 12
+            1,
+            60,
+            value=min_sugerido if isinstance(min_sugerido, int) and min_sugerido > 0 else 12,
         )
 
         valor_prest = calcular_prestacao(res.encargo_total, n_prestacoes)
@@ -161,7 +174,7 @@ with tab4:
             nd_inicio = res.periodo_nao_descontado.inicio
             nd_fim = res.periodo_nao_descontado.fim
 
-        # ===== IA: gera demo_lines (opcional) com fallback
+        # ===== IA opcional (com fallback automático para flash + fallback final determinístico)
         demo_lines = None
         if usar_ia and res.encargo_total > 0:
             payload = {
@@ -184,11 +197,13 @@ with tab4:
             try:
                 demo_lines = generate_demo_lines_with_gemini(
                     data=payload,
-                    model=gemini_model.strip() or "gemini-2.5-pro",
+                    preferred_model=gemini_model.strip() or "gemini-2.5-pro",
+                    fallback_model="gemini-2.5-flash",
+                    cache=st.session_state["demo_cache"],
                 )
                 st.success("DEMONSTRAÇÃO gerada com IA.")
             except Exception as e:
-                st.warning("IA falhou. Vou usar demonstração padrão (determinística).")
+                st.warning("IA indisponível (quota/limite). Vou usar a demonstração padrão.")
                 st.code(str(e))
                 demo_lines = None
 
@@ -283,7 +298,7 @@ if gravar:
                 "valor_prestacao_escolhida": float(valor_prest) if res.encargo_total > 0 else 0.0,
 
                 "usa_ia_demo": bool(usar_ia),
-                "gemini_model": gemini_model.strip() or None,
+                "gemini_model": (gemini_model.strip() or None),
             }
 
             try:
@@ -294,3 +309,4 @@ if gravar:
                 st.code(str(e))
 else:
     st.info("Gravação no Supabase desativada.")
+```0
