@@ -4,62 +4,61 @@ from datetime import date
 import fitz  # PyMuPDF
 from reportlab.pdfgen import canvas
 
-# (x_frac, y_frac) em relação à página (0..1). (0,0) = canto inferior esquerdo.
+# ==========================================================
+# POSIÇÕES (frações da página) — ajuste fino se precisar
+# (0,0) = canto inferior esquerdo
+# ==========================================================
 POS = {
     # Topo: Nome / Categoria / Classe / Escalão
-    "nome":      (0.09, 0.835),
-    "categoria": (0.52, 0.835),
-    "classe":    (0.69, 0.835),
-    "escalao":   (0.83, 0.835),
+    "nome":      (0.10, 0.835),
+    "categoria": (0.54, 0.835),
+    "classe":    (0.70, 0.835),
+    "escalao":   (0.84, 0.835),
 
-    # CONTAGEM DE TEMPO (1ª e 2ª linha)
-    "ct_data1": (0.18, 0.735),
-    "ct_a1":    (0.33, 0.735),
-    "ct_m1":    (0.37, 0.735),
-    "ct_d1":    (0.41, 0.735),
+    # CONTAGEM DE TEMPO — linha 1
+    "ct_obs1":  (0.06, 0.735),   # OBSERVAÇÃO (TSAE)
+    "ct_data1": (0.17, 0.735),
+    "ct_a1":    (0.28, 0.735),
+    "ct_m1":    (0.31, 0.735),
+    "ct_d1":    (0.34, 0.735),
 
-    "ct_data2": (0.18, 0.685),
-    "ct_a2":    (0.33, 0.685),
-    "ct_m2":    (0.37, 0.685),
-    "ct_d2":    (0.41, 0.685),
+    # CONTAGEM DE TEMPO — linha 2
+    "ct_obs2":  (0.06, 0.685),
+    "ct_data2": (0.17, 0.685),
+    "ct_a2":    (0.28, 0.685),
+    "ct_m2":    (0.31, 0.685),
+    "ct_d2":    (0.34, 0.685),
 
-    # ENCARGOS (1ª e 2ª linha)
-    "enc_data1": (0.18, 0.415),
-    "enc_a1":    (0.33, 0.415),
-    "enc_m1":    (0.37, 0.415),
-    "enc_d1":    (0.41, 0.415),
+    # ENCARGOS — linha 1
+    "enc_obs1":  (0.06, 0.415),  # OBSERVAÇÃO (TSND)
+    "enc_data1": (0.17, 0.415),
+    "enc_a1":    (0.28, 0.415),
+    "enc_m1":    (0.31, 0.415),
+    "enc_d1":    (0.34, 0.415),
 
-    "enc_data2": (0.18, 0.365),
-    "enc_a2":    (0.33, 0.365),
-    "enc_m2":    (0.37, 0.365),
-    "enc_d2":    (0.41, 0.365),
+    # ENCARGOS — linha 2
+    "enc_obs2":  (0.06, 0.365),
+    "enc_data2": (0.17, 0.365),
+    "enc_a2":    (0.28, 0.365),
+    "enc_m2":    (0.31, 0.365),
+    "enc_d2":    (0.34, 0.365),
 
-    # DEMONSTRAÇÃO (A/M/D grande)
-    "demo_anos": (0.06, 0.245),
-    "demo_meses":(0.15, 0.245),
-    "demo_dias": (0.24, 0.245),
+    # DEMONSTRAÇÃO — linhas (texto completo)
+    "demo_l1": (0.05, 0.235),  # A.. M.. D.. x12 + .. = ..
+    "demo_l2": (0.05, 0.200),  # salário x7% = mensal  ; mensal x meses = ...
+    "demo_l3": (0.05, 0.168),  # mensal/30 = diário    ; diário x dias = ...
+    "demo_l4": (0.05, 0.136),  # total = ...
+    "demo_l5": (0.05, 0.105),  # Nº prestações e 1ª/Restantes
 
-    # Salário e cálculo 7%
-    "salario":   (0.08, 0.205),
-    "mensal":    (0.25, 0.205),
-
-    # mensal*meses / diário*dias
-    "enc_meses": (0.67, 0.205),
-    "diario":    (0.25, 0.175),
-    "enc_dias":  (0.67, 0.175),
-
-    # Total e prestações
-    "total":      (0.16, 0.135),
-    "n_prest":    (0.70, 0.135),
-    "valor_prest":(0.19, 0.095),
-    "valor_rest": (0.19, 0.065),
+    # TOTAL grande e prestações (número)
+    "total_big": (0.15, 0.124),
+    "n_prest":   (0.73, 0.124),
 }
 
 def _fmt_date(d: date) -> str:
     return d.strftime("%d/%m/%Y")
 
 def _money_pt(x: float) -> str:
-    # 12.345,67
     s = f"{x:,.2f}"
     return s.replace(",", "X").replace(".", ",").replace("X", ".")
 
@@ -82,8 +81,11 @@ def generate_certidao_pdf(
 
     inicio_funcoes: date,
     fim_funcoes: date,
+
+    # tempo de serviço
     serv_anos: int, serv_meses: int, serv_dias: int,
 
+    # tempo não descontado (para encargos)
     nd_inicio: date | None,
     nd_fim: date | None,
     nd_anos: int, nd_meses: int, nd_dias: int,
@@ -91,13 +93,15 @@ def generate_certidao_pdf(
     salario_pensionavel: float,
     valor_mensal: float,
     valor_diario: float,
-    encargo_meses: float,
-    encargo_dias: float,
+    meses_totais: int,       # (anos*12+meses)
+    encargo_meses: float,    # mensal * meses_totais
+    encargo_dias: float,     # diário * dias
     encargo_total: float,
 
     n_prestacoes: int,
     valor_prestacao: float,
 ) -> bytes:
+
     template = fitz.open(template_pdf_path)
     page = template[0]
     rect = page.rect
@@ -106,24 +110,27 @@ def generate_certidao_pdf(
     overlay_buf = BytesIO()
     c = canvas.Canvas(overlay_buf, pagesize=(page_w, page_h))
 
-    # topo
+    # ===== Topo
     _draw(c, page_w, page_h, "nome", (nome or "")[:60], 11)
-    _draw(c, page_w, page_h, "categoria", (categoria or "")[:10], 11)
-    _draw(c, page_w, page_h, "classe", (classe or "")[:10], 11)
-    _draw(c, page_w, page_h, "escalao", (escalao or "")[:5], 11)
+    _draw(c, page_w, page_h, "categoria", (categoria or "")[:12], 11)
+    _draw(c, page_w, page_h, "classe", (classe or "")[:12], 11)
+    _draw(c, page_w, page_h, "escalao", (escalao or "")[:6], 11)
 
-    # serviço
+    # ===== Contagem de Tempo (TSAE)
+    _draw(c, page_w, page_h, "ct_obs1", "TSAE", 11)
     _draw(c, page_w, page_h, "ct_data1", _fmt_date(inicio_funcoes), 11)
     _draw(c, page_w, page_h, "ct_a1", f"{serv_anos:02d}", 11)
     _draw(c, page_w, page_h, "ct_m1", f"{serv_meses:02d}", 11)
     _draw(c, page_w, page_h, "ct_d1", f"{serv_dias:02d}", 11)
 
+    _draw(c, page_w, page_h, "ct_obs2", "", 11)
     _draw(c, page_w, page_h, "ct_data2", _fmt_date(fim_funcoes), 11)
     _draw(c, page_w, page_h, "ct_a2", "00", 11)
     _draw(c, page_w, page_h, "ct_m2", "00", 11)
     _draw(c, page_w, page_h, "ct_d2", "00", 11)
 
-    # não descontado (encargos)
+    # ===== Encargos (TSND)
+    _draw(c, page_w, page_h, "enc_obs1", "TSND", 11)
     if nd_inicio and nd_fim:
         _draw(c, page_w, page_h, "enc_data1", _fmt_date(nd_inicio), 11)
         _draw(c, page_w, page_h, "enc_a1", f"{nd_anos:02d}", 11)
@@ -135,27 +142,40 @@ def generate_certidao_pdf(
         _draw(c, page_w, page_h, "enc_m2", "00", 11)
         _draw(c, page_w, page_h, "enc_d2", "00", 11)
     else:
+        _draw(c, page_w, page_h, "enc_data1", "", 11)
         _draw(c, page_w, page_h, "enc_a1", "00", 11)
         _draw(c, page_w, page_h, "enc_m1", "00", 11)
         _draw(c, page_w, page_h, "enc_d1", "00", 11)
 
-    # demonstração
-    _draw(c, page_w, page_h, "demo_anos", f"{nd_anos:02d}", 12)
-    _draw(c, page_w, page_h, "demo_meses", f"{nd_meses:02d}", 12)
-    _draw(c, page_w, page_h, "demo_dias", f"{nd_dias:02d}", 12)
+    # ===== Demonstração (texto completo, como no modelo)
+    # Linha 1: A..M..D.. x12 + .. = meses_totais ; dias = ..
+    # Exemplo manuscrito: A03 M04 D28 -> (3*12+4)=40 meses e 28 dias
+    l1 = f"A{nd_anos:02d}.. M{nd_meses:02d}.. D{nd_dias:02d}  →  ({nd_anos:02d}×12 + {nd_meses:02d}) = {meses_totais}  meses  e  {nd_dias}  dias"
+    _draw(c, page_w, page_h, "demo_l1", l1, 10)
 
-    _draw(c, page_w, page_h, "salario", _money_pt(salario_pensionavel), 12)
-    _draw(c, page_w, page_h, "mensal", _money_pt(valor_mensal), 12)
+    # Linha 2: salário ×7% = mensal ; mensal × meses = encargo_meses
+    l2 = f"{_money_pt(salario_pensionavel)} × 7% = {_money_pt(valor_mensal)}   ;   {_money_pt(valor_mensal)} × {meses_totais} = {_money_pt(encargo_meses)}"
+    _draw(c, page_w, page_h, "demo_l2", l2, 10)
 
-    _draw(c, page_w, page_h, "enc_meses", _money_pt(encargo_meses), 12)
-    _draw(c, page_w, page_h, "diario", _money_pt(valor_diario), 12)
-    _draw(c, page_w, page_h, "enc_dias", _money_pt(encargo_dias), 12)
+    # Linha 3: mensal/30 = diário ; diário × dias = encargo_dias
+    l3 = f"{_money_pt(valor_mensal)} / 30 = {_money_pt(valor_diario)}   ;   {_money_pt(valor_diario)} × {nd_dias} = {_money_pt(encargo_dias)}"
+    _draw(c, page_w, page_h, "demo_l3", l3, 10)
 
-    _draw(c, page_w, page_h, "total", _money_pt(encargo_total), 14)
+    # Linha 4: total
+    l4 = f"TOTAL:  {_money_pt(encargo_meses)}  +  {_money_pt(encargo_dias)}  =  {_money_pt(encargo_total)}"
+    _draw(c, page_w, page_h, "demo_l4", l4, 11)
 
-    _draw(c, page_w, page_h, "n_prest", str(n_prestacoes), 12)
-    _draw(c, page_w, page_h, "valor_prest", _money_pt(valor_prestacao), 12)
-    _draw(c, page_w, page_h, "valor_rest", _money_pt(valor_prestacao), 12)
+    # Linha 5: prestações (1ª e restantes)
+    if n_prestacoes > 0:
+        l5 = f"{n_prestacoes} prestações   |   1ª: {_money_pt(valor_prestacao)} Mt   |   Restantes: {_money_pt(valor_prestacao)} Mt"
+    else:
+        l5 = "Sem prestações (encargo total = 0)"
+    _draw(c, page_w, page_h, "demo_l5", l5, 10)
+
+    # Total grande e nº prestações no lugar de destaque (se existir no teu impresso)
+    _draw(c, page_w, page_h, "total_big", _money_pt(encargo_total), 13)
+    if n_prestacoes > 0:
+        _draw(c, page_w, page_h, "n_prest", str(n_prestacoes), 12)
 
     c.showPage()
     c.save()
