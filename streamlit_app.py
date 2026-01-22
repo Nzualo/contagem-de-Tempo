@@ -1,28 +1,22 @@
 import streamlit as st
 from datetime import date
 
-# Evita erro caso python-dotenv não esteja instalado (ou não seja necessário no Cloud)
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except Exception:
     pass
 
-from services.calculos import (
-    calcular,
-    sugerir_min_prestacoes,
-    calcular_prestacao,
-)
-
+from services.calculos import calcular, sugerir_min_prestacoes, calcular_prestacao
 from services.supabase_client import get_supabase
+from services.pdf_export import generate_certidao_pdf_clean
+from services.ai_demo_gemini import generate_demo_lines_with_gemini
 
-# Import do PDF limpo com erro explícito
-try:
-    from services.pdf_export import generate_certidao_pdf_clean
-except Exception as e:
-    st.error("Falha ao importar o gerador de PDF (services.pdf_export).")
-    st.code(str(e))
-    st.stop()
+
+def money_pt(x: float) -> str:
+    s = f"{x:,.2f}"
+    return s.replace(",", "X").replace(".", ",").replace("X", ".")
+
 
 st.set_page_config(page_title="Efetividade do Funcionário", layout="wide")
 st.title("Efetividade do Funcionário")
@@ -63,10 +57,17 @@ with st.sidebar:
     )
 
     st.divider()
+    st.header("IA (Opcional)")
+    usar_ia = st.checkbox("Usar IA (Gemini) na DEMONSTRAÇÃO do PDF", value=True)
+    gemini_model = st.text_input("Modelo Gemini", value="gemini-2.5-pro")
+
+    st.caption("Configure GOOGLE_API_KEY (ou GEMINI_API_KEY) nos Secrets do Streamlit.")
+
+    st.divider()
     st.header("Supabase")
     gravar = st.checkbox("Gravar no Supabase", value=True)
 
-# Cálculo
+# ===== cálculo determinístico
 try:
     res = calcular(
         inicio_funcoes=inicio_funcoes,
@@ -127,11 +128,15 @@ with tab4:
             st.write(f"Limite por prestação (1/3): **{limite:,.2f} Mt**")
 
         min_sugerido = sugerir_min_prestacoes(res.encargo_total, remuneracao_ou_pensao, max_prestacoes=60)
+        if isinstance(min_sugerido, int) and min_sugerido > 0:
+            st.info(f"Sugestão (mínimo que cumpre 1/3): **{min_sugerido}** prestações.")
+
         n_prestacoes = st.slider(
             "Quantas prestações quer pagar?",
             1, 60,
             value=min_sugerido if isinstance(min_sugerido, int) and min_sugerido > 0 else 12
         )
+
         valor_prest = calcular_prestacao(res.encargo_total, n_prestacoes)
         st.write(f"Prestação: **{n_prestacoes}x** de **{valor_prest:,.2f} Mt**")
 
@@ -148,12 +153,44 @@ with tab4:
             st.error("Informe o Nome do funcionário.")
             st.stop()
 
+        # datas do TSND
         if res.periodo_nao_descontado is None:
             nd_inicio = None
             nd_fim = None
         else:
             nd_inicio = res.periodo_nao_descontado.inicio
             nd_fim = res.periodo_nao_descontado.fim
+
+        # ===== IA: gera demo_lines (opcional) com fallback
+        demo_lines = None
+        if usar_ia and res.encargo_total > 0:
+            payload = {
+                "nd_anos": res.nao_descontado_amd.anos,
+                "nd_meses": res.nao_descontado_amd.meses,
+                "nd_dias": res.nao_descontado_amd.dias,
+                "meses_totais": int(res.meses_totais_cobranca),
+
+                "salario_pensionavel_fmt": money_pt(float(salario_pensionavel)),
+                "valor_mensal_fmt": money_pt(float(res.valor_mensal)),
+                "encargo_meses_fmt": money_pt(float(res.encargo_meses)),
+                "valor_diario_fmt": money_pt(float(res.valor_diario)),
+                "encargo_dias_fmt": money_pt(float(res.encargo_dias)),
+                "encargo_total_fmt": money_pt(float(res.encargo_total)),
+
+                "n_prestacoes": int(n_prestacoes),
+                "valor_prestacao_fmt": money_pt(float(valor_prest)),
+            }
+
+            try:
+                demo_lines = generate_demo_lines_with_gemini(
+                    data=payload,
+                    model=gemini_model.strip() or "gemini-2.5-pro",
+                )
+                st.success("DEMONSTRAÇÃO gerada com IA.")
+            except Exception as e:
+                st.warning("IA falhou. Vou usar demonstração padrão (determinística).")
+                st.code(str(e))
+                demo_lines = None
 
         pdf_bytes = generate_certidao_pdf_clean(
             nome=nome,
@@ -177,7 +214,6 @@ with tab4:
             salario_pensionavel=float(salario_pensionavel),
             valor_mensal=float(res.valor_mensal),
             valor_diario=float(res.valor_diario),
-
             meses_totais=int(res.meses_totais_cobranca),
             encargo_meses=float(res.encargo_meses),
             encargo_dias=float(res.encargo_dias),
@@ -185,6 +221,8 @@ with tab4:
 
             n_prestacoes=int(n_prestacoes) if res.encargo_total > 0 else 0,
             valor_prestacao=float(valor_prest) if res.encargo_total > 0 else 0.0,
+
+            demo_lines=demo_lines,
         )
 
         st.download_button(
@@ -194,6 +232,7 @@ with tab4:
             mime="application/pdf",
         )
 
+# ===== Gravar no Supabase
 st.divider()
 st.subheader("Gravar registo")
 
@@ -242,6 +281,9 @@ if gravar:
 
                 "prestacoes_escolhidas": int(n_prestacoes) if res.encargo_total > 0 else 0,
                 "valor_prestacao_escolhida": float(valor_prest) if res.encargo_total > 0 else 0.0,
+
+                "usa_ia_demo": bool(usar_ia),
+                "gemini_model": gemini_model.strip() or None,
             }
 
             try:
