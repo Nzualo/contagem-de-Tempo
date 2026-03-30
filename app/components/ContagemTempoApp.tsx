@@ -5,7 +5,7 @@ import { parseDataPortugues, extrairDadosCertidao, validarDataISO } from '@/lib/
 import { calcularTempo, calcularEncargos, formatarTempo, TempoCalculado } from '@/lib/calculators/timeCalculator';
 import { gerarPDFFixacaoEncargos, DadosFixacaoEncargos, validarDados } from '@/lib/pdf-generator/fixacaoEncargosGenerator';
 import { inserirFuncionario, inserirCalculoTempo, atualizarURLPDF } from '@/lib/supabase';
-import { calcularTempo as calcularTempoLESSSOFE, gerarDemonstracaoCompleta } from '@/lib/calculos';
+import { calcularTempo as calcularTempoLESSSOFE, gerarDemonstracaoCompleta, calcularPeriods } from '@/lib/calculos';
 
 interface FormData {
   nomeFunc: string;
@@ -101,7 +101,8 @@ export default function ContagemTempoApp() {
   };
 
   /**
-   * Handler para calcular tempo
+   * Handler para calcular tempo - CORRIGIDO
+   * Utiliza calcularPeriods para divisão correcta dos períodos
    */
   const handleCalcular = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,50 +125,35 @@ export default function ContagemTempoApp() {
         throw new Error('Data de fim em formato inválido');
       }
 
-      // Calcula tempo usando LESSSOFE (com pedir emprestado)
-      const tempo = calcularTempoLESSSOFE(formData.dataInicio, formData.dataFim);
-      if (!tempo) throw new Error('Erro ao calcular tempo');
-
-      // Calcula tempo não descontado (se houver data de início de encargos)
-      let tempoNaoDescontado = {
-        anos: 0,
-        meses: 0,
-        dias: 0,
-        totalDias: 0
-      };
-
-      if (formData.dataInicioEncargos && validarDataISO(formData.dataInicioEncargos)) {
-        const calculado = calcularTempoLESSSOFE(formData.dataInicio, formData.dataInicioEncargos);
-        if (calculado) {
-          tempoNaoDescontado = calculado;
-        }
+      if (formData.dataInicioEncargos && !validarDataISO(formData.dataInicioEncargos)) {
+        throw new Error('Data de início de descontos em formato inválido');
       }
 
-      // Calcula tempo descontado (tempo total - tempo não descontado)
-      const tempoDescontado = {
-        anos: tempo.anos - tempoNaoDescontado.anos,
-        meses: tempo.meses - tempoNaoDescontado.meses,
-        dias: tempo.dias - tempoNaoDescontado.dias,
-        totalDias: tempo.totalDias - tempoNaoDescontado.totalDias
-      };
+      // CORRIGIDO: Usa calcularPeriods para divisão correcta dos períodos
+      const periods = calcularPeriods(
+        formData.dataInicio,
+        formData.dataFim,
+        formData.dataInicioEncargos || null
+      );
 
       // Armazena todos os três tempos
       const tempoCalculadoCompleto: TempoCalculado = {
-        ...tempo,
-        tempoNaoDescontado,
-        tempoDescontado
+        ...periods.tempoTotal,
+        tempoNaoDescontado: periods.tempoNaoDescontado,
+        tempoDescontado: periods.tempoDescontado
       };
 
       setTempoCalculado(tempoCalculadoCompleto);
 
-      // Gera demonstração completa com tempo total, não descontado, descontado, encargos e prestações
+      // Gera demonstração completa com dados correctamente calculados
       const demo = gerarDemonstracaoCompleta(
-        tempo,
-        tempoNaoDescontado,
-        tempoDescontado,
-        formData.dataInicio,
-        formData.dataFim,
-        formData.dataInicioEncargos || null,
+        periods.tempoTotal,
+        periods.tempoNaoDescontado,
+        periods.tempoDescontado,
+        periods.datas.inicioNaoDescontado,
+        periods.datas.fimNaoDescontado,
+        periods.datas.inicioDescontado,
+        periods.datas.fimDescontado,
         formData.salarioBase,
         formData.numeroPrestacoes
       );
@@ -485,7 +471,7 @@ export default function ContagemTempoApp() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data de Início de Encargos/Descontos
+                    Data de Início de Descontos (Opcional)
                   </label>
                   <input
                     type="date"
@@ -494,7 +480,7 @@ export default function ContagemTempoApp() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    ℹ️ Opcional: Data a partir da qual os descontos começaram a ser feitos
+                    ℹ️ Data a partir da qual os descontos começaram. Períodos anteriores a esta data são considerados "Não Descontados" (base para cálculo de encargos).
                   </p>
                 </div>
 

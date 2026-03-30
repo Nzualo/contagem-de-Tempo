@@ -230,15 +230,21 @@ export function gerarDemonstracaoTempo(
 }
 
 /**
- * Gera demonstração completa em formato texto para exibição/PDF
+ * CORRIGIDO: Gera demonstração completa com os três períodos correctamente separados
+ * 
+ * Recebe:
+ * - tempoTotal, tempoNaoDescontado, tempoDescontado: resultados CORRECTOS já calculados por calcularPeriods
+ * - Datas dos períodos
+ * - salarioBase e numeroPrestacoes para os cálculos de encargos e prestações
  */
 export function gerarDemonstracaoCompleta(
   tempoTotal: ResultadoTempo,
   tempoNaoDescontado: ResultadoTempo,
   tempoDescontado: ResultadoTempo,
-  dataInicio: string,
-  dataFim: string,
-  dataInicioEncargos: string | null,
+  inicioNaoDescontado: string,
+  fimNaoDescontado: string,
+  inicioDescontado: string,
+  fimDescontado: string,
   salarioBase: number,
   numeroPrestacoes: number
 ): {
@@ -249,46 +255,46 @@ export function gerarDemonstracaoCompleta(
   prestacoes: DemonstracaoPrestacoes;
   textoCompleto: string;
 } {
-  // Gera as três demonstrações de tempo
+  // Gera as três demonstrações de tempo COM AS DATAS CORRECTAS
   const demoTempoTotal = gerarDemonstracaoTempo(
-    dataInicio,
-    dataFim,
+    inicioNaoDescontado || inicioDescontado,
+    fimDescontado,
     tempoTotal,
     'Contagem de Tempo de Serviço (Total)'
   );
 
   const demoTempoNaoDescontado = gerarDemonstracaoTempo(
-    dataInicio,
-    dataInicioEncargos || dataFim,
+    inicioNaoDescontado,
+    fimNaoDescontado,
     tempoNaoDescontado,
-    'Tempo Não Descontado'
+    'Tempo Não Descontado (Base para Encargos)'
   );
 
   const demoTempoDescontado = gerarDemonstracaoTempo(
-    dataInicioEncargos || dataInicio,
-    dataFim,
+    inicioDescontado,
+    fimDescontado,
     tempoDescontado,
-    'Tempo Descontado (base para Encargos)'
+    'Tempo Descontado (Sem Dívida)'
   );
 
-  // Gera demonstrações de encargos e prestações
-  const encargos = calcularEncargos(tempoDescontado, salarioBase);
+  // IMPORTANTE: Os encargos são calculados EXCLUSIVAMENTE sobre o Tempo Não Descontado
+  const encargos = calcularEncargos(tempoNaoDescontado, salarioBase);
   const prestacoes = calcularPrestacoes(encargos.dividaTotal, numeroPrestacoes);
 
   const textoCompleto = [
     'DEMONSTRAÇÃO DE CÁLCULO',
     '='.repeat(50),
     '',
-    'CONTAGEM DE TEMPO:',
+    'CONTAGEM DE TEMPO DE SERVIÇO (TOTAL):',
     ...demoTempoTotal.linhas,
     '',
-    'TEMPO NÃO DESCONTADO:',
+    'TEMPO NÃO DESCONTADO (PERÍODO DA DÍVIDA):',
     ...demoTempoNaoDescontado.linhas,
     '',
-    'TEMPO DESCONTADO (para Encargos):',
+    'TEMPO DESCONTADO (SEM CÁLCULO DE ENCARGOS):',
     ...demoTempoDescontado.linhas,
     '',
-    'CÁLCULO DE ENCARGOS:',
+    'CÁLCULO DE ENCARGOS (SOBRE TEMPO NÃO DESCONTADO):',
     ...encargos.linhas,
     '',
     'CÁLCULO DE PRESTAÇÕES:',
@@ -344,4 +350,96 @@ export function gerarDemonstracaoCompleta_old(
  */
 export function formatarDecimal(valor: number, casas: number = 2): string {
   return valor.toFixed(casas);
+}
+
+/**
+ * Subtrai 1 dia de uma data no formato YYYY-MM-DD
+ * Utilizado para calcular o fim do período não descontado
+ * Ex: 2017-06-30 - 1 dia = 2017-06-29
+ */
+export function subtrairUmDia(data: string): string {
+  try {
+    const [ano, mes, dia] = data.split('-').map(Number);
+    const date = new Date(ano, mes - 1, dia);
+    date.setDate(date.getDate() - 1);
+    
+    const novoAno = date.getFullYear();
+    const novoMes = String(date.getMonth() + 1).padStart(2, '0');
+    const novoDia = String(date.getDate()).padStart(2, '0');
+    
+    return `${novoAno}-${novoMes}-${novoDia}`;
+  } catch {
+    return data; // Retorna a data original em caso de erro
+  }
+}
+
+/**
+ * CORRIGIDO: Calcula os três períodos de tempo correctamente
+ * 
+ * Período 1 (Não Descontado - Base para Encargos): dataInicioFuncoes até (dataInicioDescontos - 1 dia)
+ * Período 2 (Descontado): dataInicioDescontos até dataFimFuncoes
+ * Período 3 (Total): dataInicioFuncoes até dataFimFuncoes
+ * 
+ * IMPORTANTE: Os encargos são calculados EXCLUSIVAMENTE sobre o Período 1
+ */
+export function calcularPeriods(
+  dataInicioFuncoes: string,
+  dataFimFuncoes: string,
+  dataInicioDescontos: string | null
+): {
+  tempoTotal: ResultadoTempo;
+  tempoNaoDescontado: ResultadoTempo;
+  tempoDescontado: ResultadoTempo;
+  datas: {
+    inicioNaoDescontado: string;
+    fimNaoDescontado: string;
+    inicioDescontado: string;
+    fimDescontado: string;
+  };
+} {
+  // Período 3: Tempo Total (do início até o fim)
+  const tempoTotal = calcularTempo(dataInicioFuncoes, dataFimFuncoes);
+  if (!tempoTotal) {
+    throw new Error('Erro ao calcular tempo total');
+  }
+
+  // Se não há data de início de descontos, não há período não descontado
+  if (!dataInicioDescontos) {
+    return {
+      tempoTotal,
+      tempoNaoDescontado: { anos: 0, meses: 0, dias: 0, totalDias: 0 },
+      tempoDescontado: tempoTotal,
+      datas: {
+        inicioNaoDescontado: '',
+        fimNaoDescontado: '',
+        inicioDescontado: dataInicioFuncoes,
+        fimDescontado: dataFimFuncoes,
+      }
+    };
+  }
+
+  // Período 1: Tempo Não Descontado (do início até um dia ANTES de dataInicioDescontos)
+  const fimNaoDescontado = subtrairUmDia(dataInicioDescontos);
+  const tempoNaoDescontado = calcularTempo(dataInicioFuncoes, fimNaoDescontado);
+  if (!tempoNaoDescontado) {
+    throw new Error('Erro ao calcular tempo não descontado');
+  }
+
+  // Período 2: Tempo Descontado (de dataInicioDescontos até o fim)
+  const tempoDescontado = calcularTempo(dataInicioDescontos, dataFimFuncoes);
+  if (!tempoDescontado) {
+    throw new Error('Erro ao calcular tempo descontado');
+  }
+
+  return {
+    tempoTotal,
+    tempoNaoDescontado,
+    tempoDescontado,
+    datas: {
+      inicioNaoDescontado: dataInicioFuncoes,
+      fimNaoDescontado,
+      inicioDescontado: dataInicioDescontos,
+      fimDescontado: dataFimFuncoes,
+    }
+  };
 }
