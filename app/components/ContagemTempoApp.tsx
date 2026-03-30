@@ -6,6 +6,7 @@ import { calcularTempo, calcularEncargos, formatarTempo, TempoCalculado } from '
 import { gerarPDFFixacaoEncargos, DadosFixacaoEncargos, validarDados } from '@/lib/pdf-generator/fixacaoEncargosGenerator';
 import { inserirFuncionario, inserirCalculoTempo, atualizarURLPDF } from '@/lib/supabase';
 import { calcularTempo as calcularTempoLESSSOFE, gerarDemonstracaoCompleta, calcularPeriods } from '@/lib/calculos';
+import { gerarDocumentoWord, DadosWordExportacao } from '@/lib/gerarWord';
 
 interface FormData {
   nomeFunc: string;
@@ -193,6 +194,51 @@ export default function ContagemTempoApp() {
     setError(null);
     setSuccess(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  /**
+   * Handler para exportar para Word
+   */
+  const handleExportarWord = async () => {
+    if (!tempoCalculado || !demonstracao) {
+      setError('Nenhum cálculo disponível para exportar');
+      return;
+    }
+
+    try {
+      const dadosExportacao: DadosWordExportacao = {
+        nomeFunc: formData.nomeFunc,
+        categoria: formData.categoria,
+        classe: formData.classe,
+        escalao: formData.escalao,
+        dataInicio: formData.dataInicio,
+        dataFim: formData.dataFim,
+        salarioBase: formData.salarioBase,
+        
+        // Tempos totais
+        anosTotais: tempoCalculado.anos,
+        mesesTotais: tempoCalculado.meses,
+        diasTotais: tempoCalculado.dias,
+        
+        // Tempos não descontados (para encargos)
+        anoNaoDescontado: tempoCalculado.tempoNaoDescontado?.anos || 0,
+        mesNaoDescontado: tempoCalculado.tempoNaoDescontado?.meses || 0,
+        diaNaoDescontado: tempoCalculado.tempoNaoDescontado?.dias || 0,
+        
+        // Encargos e Prestações
+        encargoMensal: demonstracao.encargos.encargoMensal,
+        encargoDiario: demonstracao.encargos.encargoDiario,
+        dividaTotal: demonstracao.encargos.dividaTotal,
+        numeroPrestacoes: formData.numeroPrestacoes,
+        primeiraPrestacao: demonstracao.prestacoes.primeiraP,
+        valorRestantes: demonstracao.prestacoes.valorRestantes,
+      };
+
+      await gerarDocumentoWord(dadosExportacao);
+      setSuccess('Documento Word gerado com sucesso!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao gerar documento Word');
+    }
   };
 
   return (
@@ -669,6 +715,13 @@ export default function ContagemTempoApp() {
               </div>
 
               <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={handleExportarWord}
+                  className="flex-1 px-4 py-2 border border-green-500 rounded-md shadow-sm text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  📄 Exportar para Word
+                </button>
                 <button
                   type="button"
                   onClick={handleReset}
