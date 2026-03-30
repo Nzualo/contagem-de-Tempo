@@ -597,15 +597,22 @@ export default function ContagemTempoApp() {
                 <h3 className="text-lg font-semibold text-indigo-900 mb-4">📄 RESUMO</h3>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white p-4 rounded border-l-4 border-indigo-500">
-                    <p className="text-xs text-gray-600 mb-1">Tiempo de Serício</p>
-                    <p className="text-2xl font-bold text-indigo-600">
-                      {tempoCalculado.tempoDescontado?.anos || 0}A {tempoCalculado.tempoDescontado?.meses || 0}M {tempoCalculado.tempoDescontado?.dias || 0}D
+                  <div className="bg-white p-4 rounded border-l-4 border-blue-500">
+                    <p className="text-xs text-gray-600 mb-1">Tempo de Serviço</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {tempoCalculado.anos}A {tempoCalculado.meses}M {tempoCalculado.dias}D
+                    </p>
+                  </div>
+
+                  <div className="bg-white p-4 rounded border-l-4 border-yellow-500">
+                    <p className="text-xs text-gray-600 mb-1">Tempo Não Descontado</p>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {tempoCalculado.tempoNaoDescontado?.anos || 0}A {tempoCalculado.tempoNaoDescontado?.meses || 0}M {tempoCalculado.tempoNaoDescontado?.dias || 0}D
                     </p>
                   </div>
                   
                   <div className="bg-white p-4 rounded border-l-4 border-orange-500">
-                    <p className="text-xs text-gray-600 mb-1">Dívida Total</p>
+                    <p className="text-xs text-gray-600 mb-1">Total de Encargos/Dívida</p>
                     <p className="text-2xl font-bold text-orange-600">
                       {demonstracao.encargos.dividaTotal.toFixed(2)} MZN
                     </p>
@@ -618,9 +625,9 @@ export default function ContagemTempoApp() {
                     </p>
                   </div>
                   
-                  <div className="bg-white p-4 rounded border-l-4 border-blue-500">
-                    <p className="text-xs text-gray-600 mb-1">Restantes ({formData.numeroPrestacoes - 1})</p>
-                    <p className="text-2xl font-bold text-blue-600">
+                  <div className="bg-white p-4 rounded border-l-4 border-purple-500 col-span-2">
+                    <p className="text-xs text-gray-600 mb-1">Restantes Prestações ({formData.numeroPrestacoes - 1})</p>
+                    <p className="text-2xl font-bold text-purple-600">
                       {demonstracao.prestacoes.valorRestantes.toFixed(2)} MZN
                     </p>
                   </div>
