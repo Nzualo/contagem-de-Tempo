@@ -160,8 +160,17 @@ export default function ContagemTempoApp() {
 
       setTempoCalculado(tempoCalculadoCompleto);
 
-      // Gera demonstração completa com encargos e prestações
-      const demo = gerarDemonstracaoCompleta(tempoDescontado, formData.salarioBase, formData.numeroPrestacoes);
+      // Gera demonstração completa com tempo total, não descontado, descontado, encargos e prestações
+      const demo = gerarDemonstracaoCompleta(
+        tempo,
+        tempoNaoDescontado,
+        tempoDescontado,
+        formData.dataInicio,
+        formData.dataFim,
+        formData.dataInicioEncargos || null,
+        formData.salarioBase,
+        formData.numeroPrestacoes
+      );
       setDemonstracao(demo);
 
       setSuccess('Cálculos realizados com sucesso! Revise a demonstração abaixo.');
@@ -551,9 +560,48 @@ export default function ContagemTempoApp() {
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-800">Passo 3: DEMONSTRAÇÃO DE CÁLCULO</h2>
 
+              {/* DEMONSTRAÇÃO - TEMPO TOTAL */}
+              <div className="bg-blue-50 border border-blue-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4">📅 CONTAGEM DE TEMPO DE SERVIÇO (TOTAL)</h3>
+                
+                <div className="bg-white rounded p-4 border-l-4 border-blue-500 space-y-3 text-sm font-mono">
+                  {demonstracao.tempoTotal.linhas.map((linha: string, idx: number) => (
+                    <div key={idx} className="text-gray-700">
+                      <p>{linha}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* DEMONSTRAÇÃO - TEMPO NÃO DESCONTADO */}
+              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-yellow-900 mb-4">📅 TEMPO NÃO DESCONTADO</h3>
+                
+                <div className="bg-white rounded p-4 border-l-4 border-yellow-500 space-y-3 text-sm font-mono">
+                  {demonstracao.tempoNaoDescontado.linhas.map((linha: string, idx: number) => (
+                    <div key={idx} className="text-gray-700">
+                      <p>{linha}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* DEMONSTRAÇÃO - TEMPO DESCONTADO */}
+              <div className="bg-green-50 border border-green-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-green-900 mb-4">📅 TEMPO DESCONTADO (BASE PARA ENCARGOS)</h3>
+                
+                <div className="bg-white rounded p-4 border-l-4 border-green-500 space-y-3 text-sm font-mono">
+                  {demonstracao.tempoDescontado.linhas.map((linha: string, idx: number) => (
+                    <div key={idx} className="text-gray-700">
+                      <p>{linha}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* DEMONSTRAÇÃO - ENCARGOS */}
               <div className="bg-orange-50 border border-orange-300 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-orange-900 mb-4">📋 CÁLCULO DE ENCARGOS</h3>
+                <h3 className="text-lg font-semibold text-orange-900 mb-4">💰 CÁLCULO DE ENCARGOS / FIXAÇÃO DE ENCARGOS</h3>
                 
                 <div className="bg-white rounded p-4 border-l-4 border-orange-500 space-y-3 text-sm font-mono">
                   {demonstracao.encargos.linhas.map((linha: string, idx: number) => (
@@ -571,21 +619,21 @@ export default function ContagemTempoApp() {
               </div>
 
               {/* DEMONSTRAÇÃO - PRESTAÇÕES */}
-              <div className="bg-green-50 border border-green-300 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-green-900 mb-4">📊 CÁLCULO DE PRESTAÇÕES (AJUSTE DE DÍZIMAS)</h3>
+              <div className="bg-purple-50 border border-purple-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-purple-900 mb-4">📊 CÁLCULO DE PRESTAÇÕES (AJUSTE DE DÍZIMAS)</h3>
                 
-                <div className="bg-white rounded p-4 border-l-4 border-green-500 space-y-3 text-sm font-mono">
+                <div className="bg-white rounded p-4 border-l-4 border-purple-500 space-y-3 text-sm font-mono">
                   {demonstracao.prestacoes.linhas.map((linha: string, idx: number) => (
                     <div key={idx} className="text-gray-700">
                       <p>{linha}</p>
                     </div>
                   ))}
                   
-                  <div className="pt-3 border-t-2 border-green-200 mt-3">
-                    <p className="font-bold text-green-700">
+                  <div className="pt-3 border-t-2 border-purple-200 mt-3">
+                    <p className="font-bold text-purple-700">
                       ✅ Resultado:
                     </p>
-                    <p className="text-green-900 font-semibold mt-2">
+                    <p className="text-purple-900 font-semibold mt-2">
                       {demonstracao.prestacoes.fraseF}
                     </p>
                   </div>
