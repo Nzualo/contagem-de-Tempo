@@ -5,6 +5,7 @@ import { parseDataPortugues, extrairDadosCertidao, validarDataISO } from '@/lib/
 import { calcularTempo, calcularEncargos, formatarTempo, TempoCalculado } from '@/lib/calculators/timeCalculator';
 import { gerarPDFFixacaoEncargos, DadosFixacaoEncargos, validarDados } from '@/lib/pdf-generator/fixacaoEncargosGenerator';
 import { inserirFuncionario, inserirCalculoTempo, atualizarURLPDF } from '@/lib/supabase';
+import { calcularTempo as calcularTempoLESSSOFE, gerarDemonstracaoCompleta } from '@/lib/calculos';
 
 interface FormData {
   nomeFunc: string;
@@ -16,6 +17,7 @@ interface FormData {
   dataInicioEncargos: string;
   salarioBase: number;
   taxaPercentual: number;
+  numeroPrestacoes: number;
 }
 
 export default function ContagemTempoApp() {
@@ -26,6 +28,7 @@ export default function ContagemTempoApp() {
   const [step, setStep] = useState<'step1' | 'formulario' | 'resultado'>('step1');
   const [pdfText, setPdfText] = useState('');
   const [tempoCalculado, setTempoCalculado] = useState<TempoCalculado | null>(null);
+  const [demonstracao, setDemonstracao] = useState<any>(null);
   const [dadosExtraidos, setDadosExtraidos] = useState({
     nome: '',
     dataInicio: '',
@@ -40,7 +43,8 @@ export default function ContagemTempoApp() {
     dataFim: '',
     dataInicioEncargos: '',
     salarioBase: 0,
-    taxaPercentual: 7
+    taxaPercentual: 7,
+    numeroPrestacoes: 10
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +114,7 @@ export default function ContagemTempoApp() {
       if (!formData.dataInicio) throw new Error('Data de início é obrigatória');
       if (!formData.dataFim) throw new Error('Data de fim é obrigatória');
       if (formData.salarioBase <= 0) throw new Error('Salário base deve ser maior que zero');
+      if (formData.numeroPrestacoes <= 0) throw new Error('Número de prestações deve ser maior que zero');
 
       // Valida datas
       if (!validarDataISO(formData.dataInicio)) {
@@ -119,68 +124,47 @@ export default function ContagemTempoApp() {
         throw new Error('Data de fim em formato inválido');
       }
 
-      // Calcula tempo total
-      const tempo = calcularTempo(formData.dataInicio, formData.dataFim);
+      // Calcula tempo usando LESSSOFE (com pedir emprestado)
+      const tempo = calcularTempoLESSSOFE(formData.dataInicio, formData.dataFim);
       if (!tempo) throw new Error('Erro ao calcular tempo');
 
       // Calcula tempo não descontado (se houver data de início de encargos)
-      let tempoNaoDescontado = null;
-      if (formData.dataInicioEncargos && validarDataISO(formData.dataInicioEncargos)) {
-        tempoNaoDescontado = calcularTempo(formData.dataInicio, formData.dataInicioEncargos);
-      }
-
-      // Calcula tempo descontado (se houver data de início de encargos)
-      let tempoDescontado = tempo;
-      if (tempoNaoDescontado) {
-        tempoDescontado = {
-          anos: tempo.anos - tempoNaoDescontado.anos,
-          meses: tempo.meses - tempoNaoDescontado.meses,
-          dias: tempo.dias - tempoNaoDescontado.dias,
-          totalDias: tempo.totalDias - tempoNaoDescontado.totalDias
-        };
-      }
-
-      setTempoCalculado(tempo);
-
-      // Calcula encargos sobre o tempo descontado
-      const encargos = calcularEncargos(tempoDescontado, formData.salarioBase, formData.taxaPercentual);
-
-      // Prepara dados para PDF
-      const dadosPDF: DadosFixacaoEncargos = {
-        nomeFunc: formData.nomeFunc,
-        categoria: formData.categoria,
-        classe: formData.classe,
-        escalao: formData.escalao,
-        dataInicio: formData.dataInicio,
-        dataFim: formData.dataFim,
-        tempo: tempoDescontado,
-        salarioBase: formData.salarioBase,
-        encargosValor: encargos
+      let tempoNaoDescontado = {
+        anos: 0,
+        meses: 0,
+        dias: 0,
+        totalDias: 0
       };
 
-      // Valida dados
-      const validacao = validarDados(dadosPDF);
-      if (!validacao.valido) {
-        throw new Error(validacao.erros.join('; '));
+      if (formData.dataInicioEncargos && validarDataISO(formData.dataInicioEncargos)) {
+        const calculado = calcularTempoLESSSOFE(formData.dataInicio, formData.dataInicioEncargos);
+        if (calculado) {
+          tempoNaoDescontado = calculado;
+        }
       }
 
-      // Gera PDF
-      const pdfBlob = await gerarPDFFixacaoEncargos(dadosPDF);
+      // Calcula tempo descontado (tempo total - tempo não descontado)
+      const tempoDescontado = {
+        anos: tempo.anos - tempoNaoDescontado.anos,
+        meses: tempo.meses - tempoNaoDescontado.meses,
+        dias: tempo.dias - tempoNaoDescontado.dias,
+        totalDias: tempo.totalDias - tempoNaoDescontado.totalDias
+      };
 
-      // Salva em Supabase (simulado para agora)
-      // TODO: Integrar com Supabase quando estiver configurado
-      
-      // Trigger download
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Fixacao_Encargos_${formData.nomeFunc}_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Armazena todos os três tempos
+      const tempoCalculadoCompleto: TempoCalculado = {
+        ...tempo,
+        tempoNaoDescontado,
+        tempoDescontado
+      };
 
-      setSuccess(`PDF gerado com sucesso! Encargos: ${encargos.toFixed(2)} MZN`);
+      setTempoCalculado(tempoCalculadoCompleto);
+
+      // Gera demonstração completa com encargos e prestações
+      const demo = gerarDemonstracaoCompleta(tempoDescontado, formData.salarioBase, formData.numeroPrestacoes);
+      setDemonstracao(demo);
+
+      setSuccess('Cálculos realizados com sucesso! Revise a demonstração abaixo.');
       setStep('resultado');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -197,6 +181,7 @@ export default function ContagemTempoApp() {
     setMode('escolher');
     setPdfText('');
     setTempoCalculado(null);
+    setDemonstracao(null);
     setDadosExtraidos({ nome: '', dataInicio: '', dataFim: '' });
     setFormData({
       nomeFunc: '',
@@ -207,7 +192,8 @@ export default function ContagemTempoApp() {
       dataFim: '',
       dataInicioEncargos: '',
       salarioBase: 0,
-      taxaPercentual: 7
+      taxaPercentual: 7,
+      numeroPrestacoes: 10
     });
     setError(null);
     setSuccess(null);
@@ -525,6 +511,20 @@ export default function ContagemTempoApp() {
                     7% (Fixa)
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Número de Prestações *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.numeroPrestacoes}
+                    onChange={e => handleFormChange('numeroPrestacoes', parseInt(e.target.value) || 10)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
+                    min="1"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="flex gap-4">
@@ -540,56 +540,109 @@ export default function ContagemTempoApp() {
                   disabled={loading}
                   className="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
-                  {loading ? 'Processando...' : 'Calcular e Gerar PDF'}
+                  {loading ? 'Processando...' : 'Calcular'}
                 </button>
               </div>
             </form>
           )}
 
-          {/* STEP 3: Resultado */}
-          {step === 'resultado' && tempoCalculado && (
+          {/* STEP 3: Resultado com DEMONSTRAÇÃO */}
+          {step === 'resultado' && tempoCalculado && demonstracao && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800">Passo 3: Resultado</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Passo 3: DEMONSTRAÇÃO DE CÁLCULO</h2>
 
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-indigo-900 mb-4">Tempo Total de Serviço</h3>
+              {/* DEMONSTRAÇÃO - ENCARGOS */}
+              <div className="bg-orange-50 border border-orange-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-orange-900 mb-4">📋 CÁLCULO DE ENCARGOS</h3>
                 
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="bg-white rounded p-4 text-center">
-                    <p className="text-gray-600 text-sm">Anos (A)</p>
-                    <p className="text-3xl font-bold text-indigo-600">{tempoCalculado.anos}</p>
-                  </div>
-                  <div className="bg-white rounded p-4 text-center">
-                    <p className="text-gray-600 text-sm">Meses (M)</p>
-                    <p className="text-3xl font-bold text-indigo-600">{tempoCalculado.meses}</p>
-                  </div>
-                  <div className="bg-white rounded p-4 text-center">
-                    <p className="text-gray-600 text-sm">Dias (D)</p>
-                    <p className="text-3xl font-bold text-indigo-600">{tempoCalculado.dias}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <p className="text-gray-700">
-                    <strong>Total:</strong> {formatarTempo(tempoCalculado)}
-                  </p>
-                  <p className="text-gray-700">
-                    <strong>Total de Dias:</strong> {tempoCalculado.totalDias}
-                  </p>
-                  {formData.dataInicioEncargos && (
-                    <p className="text-gray-600 mt-3 pt-3 border-t border-indigo-200">
-                      ℹ️ <strong>Nota:</strong> Os encargos foram calculados a partir de {formData.dataInicioEncargos}
+                <div className="bg-white rounded p-4 border-l-4 border-orange-500 space-y-3 text-sm font-mono">
+                  {demonstracao.encargos.linhas.map((linha: string, idx: number) => (
+                    <div key={idx} className="text-gray-700">
+                      <p>{linha}</p>
+                    </div>
+                  ))}
+                  
+                  <div className="pt-3 border-t-2 border-orange-200 mt-3">
+                    <p className="font-bold text-lg text-orange-700">
+                      💰 Dívida Total: {demonstracao.encargos.dividaTotal.toFixed(2)} MZN
                     </p>
-                  )}
+                  </div>
                 </div>
               </div>
 
-              <button
-                onClick={handleReset}
-                className="w-full px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                Novo Cálculo
-              </button>
+              {/* DEMONSTRAÇÃO - PRESTAÇÕES */}
+              <div className="bg-green-50 border border-green-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-green-900 mb-4">📊 CÁLCULO DE PRESTAÇÕES (AJUSTE DE DÍZIMAS)</h3>
+                
+                <div className="bg-white rounded p-4 border-l-4 border-green-500 space-y-3 text-sm font-mono">
+                  {demonstracao.prestacoes.linhas.map((linha: string, idx: number) => (
+                    <div key={idx} className="text-gray-700">
+                      <p>{linha}</p>
+                    </div>
+                  ))}
+                  
+                  <div className="pt-3 border-t-2 border-green-200 mt-3">
+                    <p className="font-bold text-green-700">
+                      ✅ Resultado:
+                    </p>
+                    <p className="text-green-900 font-semibold mt-2">
+                      {demonstracao.prestacoes.fraseF}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* RESUMO */}
+              <div className="bg-indigo-50 border border-indigo-300 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-indigo-900 mb-4">📄 RESUMO</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white p-4 rounded border-l-4 border-indigo-500">
+                    <p className="text-xs text-gray-600 mb-1">Tiempo de Serício</p>
+                    <p className="text-2xl font-bold text-indigo-600">
+                      {tempoCalculado.tempoDescontado?.anos || 0}A {tempoCalculado.tempoDescontado?.meses || 0}M {tempoCalculado.tempoDescontado?.dias || 0}D
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white p-4 rounded border-l-4 border-orange-500">
+                    <p className="text-xs text-gray-600 mb-1">Dívida Total</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {demonstracao.encargos.dividaTotal.toFixed(2)} MZN
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white p-4 rounded border-l-4 border-green-500">
+                    <p className="text-xs text-gray-600 mb-1">1ª Prestação</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {demonstracao.prestacoes.primeiraP.toFixed(2)} MZN
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white p-4 rounded border-l-4 border-blue-500">
+                    <p className="text-xs text-gray-600 mb-1">Restantes ({formData.numeroPrestacoes - 1})</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {demonstracao.prestacoes.valorRestantes.toFixed(2)} MZN
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  Voltar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  Novo Cálculo
+                </button>
+              </div>
             </div>
           )}
         </div>

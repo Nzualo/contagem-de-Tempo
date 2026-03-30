@@ -5,14 +5,26 @@
  */
 
 export interface TempoCalculado {
+  // Tempo total de serviço (dataInicio até dataFim)
   anos: number;
   meses: number;
   dias: number;
   totalDias: number;
-  tempoNaoContribuido?: {
+  
+  // Tempo não descontado (dataInicio até dataInicioEncargos)
+  tempoNaoDescontado?: {
     anos: number;
     meses: number;
     dias: number;
+    totalDias: number;
+  };
+  
+  // Tempo descontado (usado para calcular encargos)
+  tempoDescontado?: {
+    anos: number;
+    meses: number;
+    dias: number;
+    totalDias: number;
   };
 }
 
