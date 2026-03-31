@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mz-green: #007A5E;
+  --color-mz-red: #CF0921;
+  --color-mz-yellow: #FCD116;
+  --color-mz-black: #222222;
+  
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --font-serif: "Times New Roman", Times, serif;
+}
+
+/* Base styles for brutalist look */
+body {
+  background-color: #fafaf9; /* stone-50 */
+  color: #222222; /* mz-black */
+  font-family: var(--font-sans);
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 20px 20px;
+}
