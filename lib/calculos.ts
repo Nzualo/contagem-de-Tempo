@@ -134,19 +134,19 @@ export function calcularEncargos(
   // Passo 4: Total de Meses (Anos × 12 + Meses)
   const totalMesesD = tempo.anos * 12 + tempo.meses;
   
-  // Passo 5: Calcular valores parciais
-  const totalMeses = Number((encargoMensal * mesesmFalta).toFixed(2));
-  const totalDias = Number((encargoDiario * diasEmFalta).toFixed(2));
+  // Passo 5: Calcular valores parciais (CORRIGIDO: usar totalMesesD, não mesesmFalta)
+  const valorTotalMeses = Number((encargoMensal * totalMesesD).toFixed(2));
+  const valorTotalDias = Number((encargoDiario * diasEmFalta).toFixed(2));
   
   // Passo 6: Dívida Total
-  const dividaTotal = Number((totalMeses + totalDias).toFixed(2));
+  const dividaTotal = Number((valorTotalMeses + valorTotalDias).toFixed(2));
 
   // Gera as linhas de demonstração no formato exacto pedido
   const linhas: string[] = [
     `${salarioBase.toFixed(2)} x 7% = ${encargoMensal.toFixed(2)}Mt`,
-    `${encargoMensal.toFixed(2)} : 30d = ${encargoDiario.toFixed(2)} x ${diasEmFalta}d = ${totalDias.toFixed(2)}Mt`,
-    `${encargoMensal.toFixed(2)} x ${mesesmFalta}M = ${totalMeses.toFixed(2)}Mt`,
-    `Total ${totalMeses.toFixed(2)} + ${totalDias.toFixed(2)} = ${dividaTotal.toFixed(2)}Mt`
+    `${encargoMensal.toFixed(2)} : 30d = ${encargoDiario.toFixed(2)} x ${diasEmFalta}d = ${valorTotalDias.toFixed(2)}Mt`,
+    `${encargoMensal.toFixed(2)} x ${totalMesesD}M = ${valorTotalMeses.toFixed(2)}Mt`,
+    `Total ${valorTotalMeses.toFixed(2)} + ${valorTotalDias.toFixed(2)} = ${dividaTotal.toFixed(2)}Mt`
   ];
 
   return {
@@ -154,9 +154,9 @@ export function calcularEncargos(
     encargoMensal,
     encargoDiario,
     diasEmFalta,
-    totalDias,
+    totalDias: valorTotalDias,
     mesesmFalta,
-    totalMeses,
+    totalMeses: totalMesesD,  // Número total de meses (anos * 12 + meses)
     dividaTotal,
     linhas
   };
@@ -442,4 +442,107 @@ export function calcularPeriods(
       fimDescontado: dataFimFuncoes,
     }
   };
+}
+
+/**
+ * Calcula tempo detalhado - Desdobra a contagem em dois blocos para replicar
+ * o método manual de contabilidade do Estado usando anos comerciais (30 dias/mês)
+ * 
+ * Bloco 1: Do dataInicio até 30/12 do mesmo ano
+ * Bloco 2: De 01/01 do ano seguinte até dataFim
+ * Soma Bruta: Soma dos blocos
+ * Soma Convertida: Resultado final com conversões (30 dias = 1 mês, 12 meses = 1 ano)
+ */
+export interface TempoDetalhado {
+  bloco1: {
+    dias: number;
+    meses: number;
+    anos: number;
+    dataInicio: string;
+    dataFim: string;
+  };
+  bloco2: {
+    dias: number;
+    meses: number;
+    anos: number;
+    dataInicio: string;
+    dataFim: string;
+  };
+  somaBruta: {
+    dias: number;
+    meses: number;
+    anos: number;
+  };
+  somaConvertida: {
+    dias: number;
+    meses: number;
+    anos: number;
+  };
+}
+
+export function calcularTempoDetalhado(dataInicioStr: string, dataFimStr: string): TempoDetalhado | null {
+  try {
+    const [anoInicio, mesInicio, diaInicio] = dataInicioStr.split('-').map(Number);
+    const [anoFim, mesFim, diaFim] = dataFimStr.split('-').map(Number);
+
+    // Bloco 1: Do dataInicio até 30/12 do mesmo ano
+    const dias1 = 30 - diaInicio + 1; // Regra inclusiva
+    const meses1 = 12 - mesInicio;
+    const anos1 = 0;
+
+    // Bloco 2: De 01/01 do ano seguinte até dataFim
+    const dias2 = diaFim;
+    const meses2 = mesFim - 1;
+    const anos2 = anoFim - (anoInicio + 1);
+
+    // Soma Bruta
+    let diasSoma = dias1 + dias2;
+    let mesesSoma = meses1 + meses2;
+    let anosSoma = anos1 + anos2;
+
+    // Soma Convertida: Se diasSoma >= 30, converte para mês
+    let diasConvertidos = diasSoma;
+    let mesesConvertidos = mesesSoma;
+    let anosConvertidos = anosSoma;
+
+    if (diasConvertidos >= 30) {
+      mesesConvertidos += Math.floor(diasConvertidos / 30);
+      diasConvertidos = diasConvertidos % 30;
+    }
+
+    // Se mesesConvertidos >= 12, converte para ano
+    if (mesesConvertidos >= 12) {
+      anosConvertidos += Math.floor(mesesConvertidos / 12);
+      mesesConvertidos = mesesConvertidos % 12;
+    }
+
+    return {
+      bloco1: {
+        dias: dias1,
+        meses: meses1,
+        anos: anos1,
+        dataInicio: dataInicioStr,
+        dataFim: `${anoInicio}-12-30`
+      },
+      bloco2: {
+        dias: dias2,
+        meses: meses2,
+        anos: anos2,
+        dataInicio: `${anoInicio + 1}-01-01`,
+        dataFim: dataFimStr
+      },
+      somaBruta: {
+        dias: diasSoma,
+        meses: mesesSoma,
+        anos: anosSoma
+      },
+      somaConvertida: {
+        dias: diasConvertidos,
+        meses: mesesConvertidos,
+        anos: anosConvertidos
+      }
+    };
+  } catch {
+    return null;
+  }
 }

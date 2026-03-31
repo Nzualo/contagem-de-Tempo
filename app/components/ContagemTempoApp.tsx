@@ -6,7 +6,7 @@ import { calcularTempo, calcularEncargos, formatarTempo, TempoCalculado } from '
 import { gerarPDFFixacaoEncargos, DadosFixacaoEncargos, validarDados } from '@/lib/pdf-generator/fixacaoEncargosGenerator';
 import { inserirFuncionario, inserirCalculoTempo, atualizarURLPDF } from '@/lib/supabase';
 import { calcularTempo as calcularTempoLESSSOFE, gerarDemonstracaoCompleta, calcularPeriods } from '@/lib/calculos';
-import { gerarDocumentoWord, DadosWordExportacao } from '@/lib/gerarWord';
+import gerarDocumentoWord from '@/lib/gerarWord';
 
 interface FormData {
   nomeFunc: string;
@@ -111,6 +111,30 @@ export default function ContagemTempoApp() {
     setError(null);
 
     try {
+      // Normalize DD/MM/YYYY inputs to ISO (YYYY-MM-DD) if user typed them
+      const ddmmyyyyToISO = (s?: string) => {
+        if (!s) return s;
+        const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (m) {
+          const [_, d, mth, y] = m;
+          return `${y}-${mth}-${d}`;
+        }
+        return s;
+      };
+
+      const normalizedDataInicio = ddmmyyyyToISO(formData.dataInicio);
+      const normalizedDataFim = ddmmyyyyToISO(formData.dataFim);
+      const normalizedDataInicioEncargos = ddmmyyyyToISO(formData.dataInicioEncargos);
+
+      if (normalizedDataInicio !== formData.dataInicio || normalizedDataFim !== formData.dataFim || normalizedDataInicioEncargos !== formData.dataInicioEncargos) {
+        setFormData(prev => ({
+          ...prev,
+          dataInicio: normalizedDataInicio || '',
+          dataFim: normalizedDataFim || '',
+          dataInicioEncargos: normalizedDataInicioEncargos || '',
+        }));
+      }
+
       // Validações
       if (!formData.nomeFunc) throw new Error('Nome do funcionário é obrigatório');
       if (!formData.dataInicio) throw new Error('Data de início é obrigatória');
@@ -128,6 +152,16 @@ export default function ContagemTempoApp() {
 
       if (formData.dataInicioEncargos && !validarDataISO(formData.dataInicioEncargos)) {
         throw new Error('Data de início de descontos em formato inválido');
+      }
+
+      // Se foi fornecida a data de início de descontos, assegura que está entre início e fim
+      if (formData.dataInicioEncargos) {
+        const inicio = new Date(formData.dataInicio);
+        const fim = new Date(formData.dataFim);
+        const inicioDescontos = new Date(formData.dataInicioEncargos);
+        if (inicioDescontos.getTime() < inicio.getTime() || inicioDescontos.getTime() > fim.getTime()) {
+          throw new Error('Data de Início de Descontos deve estar entre a Data de Início e a Data de Fim');
+        }
       }
 
       // CORRIGIDO: Usa calcularPeriods para divisão correcta dos períodos
@@ -205,39 +239,27 @@ export default function ContagemTempoApp() {
       return;
     }
 
+    setLoading(true);
+    setError(null);
     try {
-      const dadosExportacao: DadosWordExportacao = {
-        nomeFunc: formData.nomeFunc,
+      const dadosExportacao = {
+        nome: formData.nomeFunc,
         categoria: formData.categoria,
         classe: formData.classe,
         escalao: formData.escalao,
-        dataInicio: formData.dataInicio,
-        dataFim: formData.dataFim,
-        salarioBase: formData.salarioBase,
-        
-        // Tempos totais
-        anosTotais: tempoCalculado.anos,
-        mesesTotais: tempoCalculado.meses,
-        diasTotais: tempoCalculado.dias,
-        
-        // Tempos não descontados (para encargos)
-        anoNaoDescontado: tempoCalculado.tempoNaoDescontado?.anos || 0,
-        mesNaoDescontado: tempoCalculado.tempoNaoDescontado?.meses || 0,
-        diaNaoDescontado: tempoCalculado.tempoNaoDescontado?.dias || 0,
-        
-        // Encargos e Prestações
-        encargoMensal: demonstracao.encargos.encargoMensal,
-        encargoDiario: demonstracao.encargos.encargoDiario,
-        dividaTotal: demonstracao.encargos.dividaTotal,
-        numeroPrestacoes: formData.numeroPrestacoes,
-        primeiraPrestacao: demonstracao.prestacoes.primeiraP,
-        valorRestantes: demonstracao.prestacoes.valorRestantes,
+        tempoTotal: demonstracao.tempoTotal,
+        tempoNaoDescontado: demonstracao.tempoNaoDescontado,
+        tempoDescontado: demonstracao.tempoDescontado,
+        encargos: demonstracao.encargos,
+        prestacoes: demonstracao.prestacoes,
       };
 
-      await gerarDocumentoWord(dadosExportacao);
+      await gerarDocumentoWord(dadosExportacao as any);
       setSuccess('Documento Word gerado com sucesso!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao gerar documento Word');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -280,7 +302,7 @@ export default function ContagemTempoApp() {
                 Escolha uma das opções abaixo para começar:
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* Opção 1: Manual */}
                 <button
                   onClick={() => setMode('manual')}
@@ -555,16 +577,29 @@ export default function ContagemTempoApp() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Número de Prestações *
+                    Número de Prestações * (Máximo 60 meses / 5 anos)
                   </label>
                   <input
                     type="number"
                     value={formData.numeroPrestacoes}
-                    onChange={e => handleFormChange('numeroPrestacoes', parseInt(e.target.value) || 10)}
+                    onChange={e => {
+                      const value = parseInt(e.target.value) || 10;
+                      const limitedValue = Math.min(Math.max(value, 1), 60);
+                      if (value > 60) {
+                        setError('O número de prestações não pode exceder 60 meses (5 anos conforme LESSSOFE)');
+                      } else {
+                        setError(null);
+                      }
+                      handleFormChange('numeroPrestacoes', limitedValue);
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
                     min="1"
+                    max="60"
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    ℹ️ Conforme LESSSOFE, o limite máximo é 60 meses (5 anos).
+                  </p>
                 </div>
               </div>
 
