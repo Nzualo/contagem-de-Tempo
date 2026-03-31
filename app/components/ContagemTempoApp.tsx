@@ -264,522 +264,539 @@ export default function ContagemTempoApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Contagem de Tempo
-          </h1>
-          <p className="text-gray-600">
-            Sistema de Fixação de Encargos - SDEJT Inhassoro
-          </p>
+    <div className="min-h-screen bg-stone-50 p-4 sm:p-6 lg:p-8 font-sans">
+      <div className="max-w-4xl mx-auto">
+        {/* Institucional Header / Flag Ribbon */}
+        <div className="flex w-full h-3">
+          <div className="flex-1 bg-mz-green"></div>
+          <div className="flex-1 bg-mz-black"></div>
+          <div className="flex-1 bg-mz-yellow"></div>
+          <div className="flex-1 bg-white"></div>
+          <div className="flex-1 bg-mz-red"></div>
         </div>
 
-        {/* Card Principal */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {/* Alertas */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 font-semibold">❌ Erro</p>
-              <p className="text-red-600">{error}</p>
-            </div>
-          )}
+        {/* Card Principal - Brutalist */}
+        <div className="bg-white border-4 border-mz-black shadow-[8px_8px_0px_#222222] p-0 relative">
+          
+          <div className="text-center p-8 border-b-4 border-mz-black bg-mz-green/5">
+            <h1 className="text-4xl md:text-5xl font-serif font-bold text-mz-black uppercase tracking-wider mb-2">
+              Contagem de Tempo
+            </h1>
+            <p className="text-mz-black font-bold tracking-widest uppercase text-sm">
+              Sistema de Fixação de Encargos - SDEJT Inhassoro
+            </p>
+          </div>
 
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-700 font-semibold">✅ Sucesso</p>
-              <p className="text-green-600">{success}</p>
-            </div>
-          )}
-
-          {/* STEP 1: Escolher Modo ou Upload/Manual */}
-          {step === 'step1' && mode === 'escolher' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800">Passo 1: Como Deseja Proceder?</h2>
-              
-              <p className="text-gray-600 text-center mb-8">
-                Escolha uma das opções abaixo para começar:
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Opção 1: Manual */}
-                <button
-                  onClick={() => setMode('manual')}
-                  className="p-6 border-2 border-indigo-300 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition text-left"
-                >
-                  <p className="text-3xl mb-3">📝</p>
-                  <h3 className="text-lg font-bold text-gray-800 mb-2">Opção 1: Entrada Manual</h3>
-                  <p className="text-gray-600 text-sm">
-                    Insira manualmente a data de início de funções e a última data de serviço
-                  </p>
-                </button>
-
-                {/* Opção 2: Upload PDF */}
-                <button
-                  onClick={() => setMode('upload')}
-                  className="p-6 border-2 border-green-300 rounded-lg hover:border-green-600 hover:bg-green-50 transition text-left"
-                >
-                  <p className="text-3xl mb-3">📄</p>
-                  <h3 className="text-lg font-bold text-gray-800 mb-2">Opção 2: Fazer Upload de Certidão</h3>
-                  <p className="text-gray-600 text-sm">
-                    Carregue um PDF da certidão e o sistema preencherá os dados automaticamente
-                  </p>
-                </button>
+          <div className="p-8">
+            {/* Alertas Brutalistas */}
+            {error && (
+              <div className="mb-6 p-4 bg-mz-red border-4 border-mz-black text-white shadow-[4px_4px_0px_#222222]">
+                <p className="font-bold uppercase tracking-wider mb-1">❌ Erro</p>
+                <p className="font-medium">{error}</p>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Opção 1: ENTRADA MANUAL */}
-          {step === 'step1' && mode === 'manual' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800">Passo 1: Entrada Manual de Datas</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nome do Funcionário *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder=""
-                    value={formData.nomeFunc}
-                    onChange={e => handleFormChange('nomeFunc', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400"
-                    required
-                  />
+            {success && (
+              <div className="mb-6 p-4 bg-mz-green border-4 border-mz-black text-white shadow-[4px_4px_0px_#222222]">
+                <p className="font-bold uppercase tracking-wider mb-1">✅ Sucesso</p>
+                <p className="font-medium">{success}</p>
+              </div>
+            )}
+
+            {/* STEP 1: Escolher Modo ou Upload/Manual */}
+            {step === 'step1' && mode === 'escolher' && (
+              <div className="space-y-8">
+                <h2 className="text-2xl font-serif font-bold text-mz-black uppercase tracking-wider border-b-2 border-mz-black pb-2">
+                  Passo 1: Selecionar Método
+                </h2>
+                
+                <p className="text-mz-black font-medium mb-8">
+                  ESCOLHA O MÉTODO DE ENTRADA DE DADOS:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                  {/* Opção 1: Manual */}
+                  <button
+                    onClick={() => setMode('manual')}
+                    className="group p-6 bg-white border-4 border-mz-black shadow-[6px_6px_0px_#222222] hover:translate-x-1 hover:translate-y-1 hover:shadow-none hover:bg-mz-yellow/10 transition-all text-left rounded-none"
+                  >
+                    <p className="text-4xl mb-4 group-hover:scale-110 transition-transform">📝</p>
+                    <h3 className="text-lg font-serif font-bold text-mz-black uppercase mb-2">Entrada Manual</h3>
+                    <p className="text-mz-black/80 text-sm font-medium">
+                      Inserir manualmente as datas de início e fim
+                    </p>
+                  </button>
+
+                  {/* Opção 2: Upload PDF */}
+                  <button
+                    onClick={() => setMode('upload')}
+                    className="group p-6 bg-white border-4 border-mz-black shadow-[6px_6px_0px_#222222] hover:translate-x-1 hover:translate-y-1 hover:shadow-none hover:bg-mz-green/10 transition-all text-left rounded-none"
+                  >
+                    <p className="text-4xl mb-4 group-hover:scale-110 transition-transform">📄</p>
+                    <h3 className="text-lg font-serif font-bold text-mz-black uppercase mb-2">Upload de Certidão</h3>
+                    <p className="text-mz-black/80 text-sm font-medium">
+                      Carregar PDF para extração automática de dados
+                    </p>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Opção 1: ENTRADA MANUAL */}
+            {step === 'step1' && mode === 'manual' && (
+              <div className="space-y-8">
+                <h2 className="text-2xl font-serif font-bold text-mz-black uppercase tracking-wider border-b-2 border-mz-black pb-2">
+                  Passo 1: Entrada Manual de Datas
+                </h2>
+                
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Nome do Funcionário *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nomeFunc}
+                      onChange={e => handleFormChange('nomeFunc', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:outline-none focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none transition-all bg-white text-mz-black placeholder-stone-400 font-medium"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                        Data Início Funções *
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataInicio}
+                        onChange={e => handleFormChange('dataInicio', e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:outline-none focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none transition-all bg-white text-mz-black font-medium"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                        Última Data Serviço *
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataFim}
+                        onChange={e => handleFormChange('dataFim', e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:outline-none focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none transition-all bg-white text-mz-black font-medium"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-mz-yellow/20 border-l-4 border-mz-yellow p-4">
+                    <p className="text-sm text-mz-black font-medium uppercase">
+                      ℹ️ Utilize o teclado numérico ou o calendário para seleccionar as datas rigorosas.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex gap-4 pt-4 border-t-2 border-mz-black">
+                  <button
+                    type="button"
+                    onClick={() => setMode('escolher')}
+                    className="flex-1 px-4 py-3 border-2 border-mz-black bg-white text-mz-black font-bold uppercase tracking-wider rounded-none shadow-[4px_4px_0px_#222222] hover:bg-stone-100 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+                  >
+                    Retroceder
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!formData.nomeFunc || !formData.dataInicio || !formData.dataFim) {
+                        setError('Atenção: Preencha todos os campos obrigatórios rigorosamente.');
+                        return;
+                      }
+                      setStep('formulario');
+                      setError(null);
+                    }}
+                    className="flex-1 px-4 py-3 border-2 border-mz-black bg-mz-green text-white font-bold uppercase tracking-wider rounded-none shadow-[4px_4px_0px_#222222] hover:bg-[#00604A] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+                  >
+                    Avançar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Opção 2: UPLOAD PDF */}
+            {step === 'step1' && mode === 'upload' && (
+              <div className="space-y-8">
+                <h2 className="text-2xl font-serif font-bold text-mz-black uppercase tracking-wider border-b-2 border-mz-black pb-2">
+                  Passo 1: Documento PDF
+                </h2>
+                
+                <div className="border-4 border-dashed border-mz-black bg-mz-green/5 p-12 text-center cursor-pointer hover:bg-mz-green/10 transition-colors relative"
+                     onClick={() => fileInputRef.current?.click()}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileUpload}
+                    disabled={loading}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  
+                  <div className="space-y-4">
+                    <p className="text-5xl">📄</p>
+                    <p className="text-xl font-bold font-serif text-mz-black uppercase tracking-wider">
+                      {loading ? 'A PROCESSAR...' : 'ANEXAR CERTIDÃO DE EFECTIVIDADE'}
+                    </p>
+                    <p className="text-sm font-medium text-mz-black/70 uppercase tracking-widest">
+                      Formato Exigido: .PDF | Sistema de Extração Automática
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-mz-green/10 border-l-4 border-mz-green p-4">
+                  <p className="text-sm text-mz-black font-medium uppercase">
+                    ℹ️ O sistema lerá os carateres e aplicará os dados aos campos correspondentes.
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t-2 border-mz-black">
+                  <button
+                    type="button"
+                    onClick={() => setMode('escolher')}
+                    className="w-full px-4 py-3 border-2 border-mz-black bg-white text-mz-black font-bold uppercase tracking-wider rounded-none shadow-[4px_4px_0px_#222222] hover:bg-stone-100 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+                  >
+                    Retroceder
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: Formulário de Dados */}
+            {step === 'formulario' && (
+              <form onSubmit={handleCalcular} className="space-y-8">
+                <h2 className="text-2xl font-serif font-bold text-mz-black uppercase tracking-wider border-b-2 border-mz-black pb-2">
+                  Passo 2: Dados Administrativos
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Data de Início das Funções *
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Nome do Funcionário *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nomeFunc}
+                      onChange={e => handleFormChange('nomeFunc', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none outline-none font-medium text-mz-black"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Categoria / Função
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.categoria}
+                      onChange={e => handleFormChange('categoria', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none outline-none font-medium text-mz-black"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Classe
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.classe}
+                      onChange={e => handleFormChange('classe', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none outline-none font-medium text-mz-black"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Escalão
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.escalao}
+                      onChange={e => handleFormChange('escalao', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none outline-none font-medium text-mz-black"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Data Início (ISO) *
                     </label>
                     <input
                       type="date"
                       value={formData.dataInicio}
                       onChange={e => handleFormChange('dataInicio', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none outline-none font-medium text-mz-black"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Última Data de Serviço *
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Data Fim (ISO) *
                     </label>
                     <input
                       type="date"
                       value={formData.dataFim}
                       onChange={e => handleFormChange('dataFim', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none outline-none font-medium text-mz-black"
                       required
                     />
                   </div>
-                </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
-                    ℹ️ <strong>Dica:</strong> Use o formato DD/MM/AAAA ou o calendário para selecionar as datas
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setMode('escolher')}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  ← Voltar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!formData.nomeFunc || !formData.dataInicio || !formData.dataFim) {
-                      setError('Por favor, preencha todos os campos obrigatórios');
-                      return;
-                    }
-                    setStep('formulario');
-                    setError(null);
-                  }}
-                  className="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  Continuar →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Opção 2: UPLOAD PDF */}
-          {step === 'step1' && mode === 'upload' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800">Passo 1: Upload da Certidão</h2>
-              
-              <div className="border-2 border-dashed border-green-300 rounded-lg p-8 text-center cursor-pointer hover:border-green-600 hover:bg-green-50 transition"
-                   onClick={() => fileInputRef.current?.click()}>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileUpload}
-                  disabled={loading}
-                  className="hidden"
-                />
-                
-                <div className="space-y-2">
-                  <p className="text-4xl">📄</p>
-                  <p className="text-lg font-semibold text-gray-700">
-                    {loading ? 'Processando PDF...' : 'Arraste ou clique para carregar PDF'}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Exemplo: Cert. Efect. Joao Candido.pdf
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-sm text-green-800">
-                  ℹ️ <strong>Como funciona:</strong> O sistema lerá o PDF e extrairá automaticamente o nome do funcionário e as datas de serviço
-                </p>
-              </div>
-
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setMode('escolher')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  ← Voltar
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: Formulário de Dados */}
-          {step === 'formulario' && (
-            <form onSubmit={handleCalcular} className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800">Passo 2: Dados do Funcionário</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.nomeFunc}
-                    onChange={e => handleFormChange('nomeFunc', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Categoria
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.categoria}
-                    onChange={e => handleFormChange('categoria', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Classe
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.classe}
-                    onChange={e => handleFormChange('classe', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Escalão
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.escalao}
-                    onChange={e => handleFormChange('escalao', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data Início (ISO) *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.dataInicio}
-                    onChange={e => handleFormChange('dataInicio', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data Fim (ISO) *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.dataFim}
-                    onChange={e => handleFormChange('dataFim', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data de Início de Descontos (Opcional)
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.dataInicioEncargos}
-                    onChange={e => handleFormChange('dataInicioEncargos', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    ℹ️ Data a partir da qual os descontos começaram. Períodos anteriores a esta data são considerados "Não Descontados" (base para cálculo de encargos).
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Salário Base (MZN) *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.salarioBase}
-                    onChange={e => handleFormChange('salarioBase', parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-                    step="0.01"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Taxa de Encargos (%)
-                  </label>
-                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-900 font-semibold flex items-center">
-                    7% (Fixa)
+                  <div>
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Início de Descontos (Opcional)
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.dataInicioEncargos}
+                      onChange={e => handleFormChange('dataInicioEncargos', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none outline-none font-medium text-mz-black bg-[#FAFAF9]"
+                    />
+                    <p className="text-xs text-mz-black/70 font-semibold mt-2 uppercase tracking-wide">
+                      A partir daqui calculam-se os encargos.
+                    </p>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Número de Prestações * (Máximo 60 meses / 5 anos)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.numeroPrestacoes}
-                    onChange={e => {
-                      const value = parseInt(e.target.value) || 10;
-                      const limitedValue = Math.min(Math.max(value, 1), 60);
-                      if (value > 60) {
-                        setError('O número de prestações não pode exceder 60 meses (5 anos conforme LESSSOFE)');
-                      } else {
-                        setError(null);
-                      }
-                      handleFormChange('numeroPrestacoes', limitedValue);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-                    min="1"
-                    max="60"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    ℹ️ Conforme LESSSOFE, o limite máximo é 60 meses (5 anos).
-                  </p>
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Salário Base (MZN) *
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.salarioBase}
+                      onChange={e => handleFormChange('salarioBase', parseFloat(e.target.value) || 0)}
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none outline-none font-medium text-mz-black"
+                      step="0.01"
+                      required
+                    />
+                  </div>
 
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  Voltar
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-                >
-                  {loading ? 'Processando...' : 'Calcular'}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* STEP 3: Resultado com DEMONSTRAÇÃO */}
-          {step === 'resultado' && tempoCalculado && demonstracao && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800">Passo 3: DEMONSTRAÇÃO DE CÁLCULO</h2>
-
-              {/* DEMONSTRAÇÃO - TEMPO TOTAL */}
-              <div className="bg-blue-50 border border-blue-300 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-blue-900 mb-4">📅 CONTAGEM DE TEMPO DE SERVIÇO (TOTAL)</h3>
-                
-                <div className="bg-white rounded p-4 border-l-4 border-blue-500 space-y-3 text-sm font-mono">
-                  {demonstracao.tempoTotal.linhas.map((linha: string, idx: number) => (
-                    <div key={idx} className="text-gray-700">
-                      <p>{linha}</p>
+                  <div>
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Taxa de Encargos (%)
+                    </label>
+                    <div className="w-full px-4 py-3 border-2 border-mz-black rounded-none bg-stone-200 text-mz-black font-bold shadow-inner">
+                      7.00% (TAXA FIXA DE ESTADO)
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              {/* DEMONSTRAÇÃO - TEMPO NÃO DESCONTADO */}
-              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-yellow-900 mb-4">📅 TEMPO NÃO DESCONTADO</h3>
-                
-                <div className="bg-white rounded p-4 border-l-4 border-yellow-500 space-y-3 text-sm font-mono">
-                  {demonstracao.tempoNaoDescontado.linhas.map((linha: string, idx: number) => (
-                    <div key={idx} className="text-gray-700">
-                      <p>{linha}</p>
+                  <div>
+                    <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
+                      Número de Prestações * (Máx 60)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.numeroPrestacoes}
+                      onChange={e => {
+                        const value = parseInt(e.target.value) || 10;
+                        const limitedValue = Math.min(Math.max(value, 1), 60);
+                        if (value > 60) {
+                          setError('LIMITE LEGAL EXCESSIVO (MAX. 60 MESES).');
+                        } else {
+                          setError(null);
+                        }
+                        handleFormChange('numeroPrestacoes', limitedValue);
+                      }}
+                      className="w-full px-4 py-3 border-2 border-mz-black rounded-none shadow-[2px_2px_0px_#222222] focus:translate-x-0.5 focus:translate-y-0.5 focus:shadow-none outline-none font-medium text-mz-black"
+                      min="1"
+                      max="60"
+                      required
+                    />
+                    <p className="text-xs text-mz-red font-bold mt-2 uppercase tracking-wide">
+                      LIMITE LEGAL INALTERÁVEL: 5 ANOS (LESSSOFE)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4 border-t-2 border-mz-black">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="flex-1 px-4 py-3 border-2 border-mz-black bg-mz-red text-white font-bold uppercase tracking-wider rounded-none shadow-[4px_4px_0px_#222222] hover:bg-[#AA0015] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+                  >
+                    Anular Dados
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-4 py-3 border-2 border-mz-black bg-mz-green text-white font-bold uppercase tracking-wider rounded-none shadow-[4px_4px_0px_#222222] hover:bg-[#00604A] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50 disabled:shadow-none disabled:translate-x-1 disabled:translate-y-1"
+                  >
+                    {loading ? 'A PROCESSAR...' : 'EMITIR CÁLCULO ESTADUAL'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* STEP 3: Resultado com DEMONSTRAÇÃO */}
+            {step === 'resultado' && tempoCalculado && demonstracao && (
+              <div className="space-y-8">
+                <header className="border-b-4 border-mz-black pb-4 flex items-center justify-between">
+                  <h2 className="text-3xl font-serif font-bold text-mz-black uppercase tracking-wider">
+                    DOCUMENTO OFICIAL
+                  </h2>
+                  <div className="px-3 py-1 bg-mz-black text-white font-bold text-xs uppercase tracking-widest border border-black">
+                    Nº OP-001/SDEJT
+                  </div>
+                </header>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+                  
+                  <div className="space-y-6 w-full">
+                    {/* DEMONSTRAÇÃO - TEMPO TOTAL */}
+                    <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#222222] w-full">
+                      <div className="bg-mz-black text-white p-3 border-b-2 border-mz-black">
+                        <h3 className="text-sm font-bold tracking-widest uppercase">CONTAGEM DE TEMPO INTEGRAL</h3>
+                      </div>
+                      <div className="p-4 space-y-2 font-mono text-sm text-mz-black">
+                        {demonstracao.tempoTotal.linhas.map((linha: string, idx: number) => (
+                          <div key={idx} className="border-b border-stone-200 pb-1 last:border-0">{linha}</div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* DEMONSTRAÇÃO - TEMPO DESCONTADO */}
-              <div className="bg-green-50 border border-green-300 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-green-900 mb-4">📅 TEMPO DESCONTADO (BASE PARA ENCARGOS)</h3>
-                
-                <div className="bg-white rounded p-4 border-l-4 border-green-500 space-y-3 text-sm font-mono">
-                  {demonstracao.tempoDescontado.linhas.map((linha: string, idx: number) => (
-                    <div key={idx} className="text-gray-700">
-                      <p>{linha}</p>
+                    {/* DEMONSTRAÇÃO - TEMPO NÃO DESCONTADO */}
+                    <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#222222] w-full">
+                      <div className="bg-mz-yellow border-b-2 border-mz-black p-3">
+                        <h3 className="text-sm font-bold text-mz-black tracking-widest uppercase">PERÍODO LIVRE / NÃO DESCONTADO</h3>
+                      </div>
+                      <div className="p-4 space-y-2 font-mono text-sm text-mz-black">
+                        {demonstracao.tempoNaoDescontado.linhas.map((linha: string, idx: number) => (
+                          <div key={idx} className="border-b border-stone-200 pb-1 last:border-0">{linha}</div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* DEMONSTRAÇÃO - ENCARGOS */}
-              <div className="bg-orange-50 border border-orange-300 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-orange-900 mb-4">💰 CÁLCULO DE ENCARGOS / FIXAÇÃO DE ENCARGOS</h3>
-                
-                <div className="bg-white rounded p-4 border-l-4 border-orange-500 space-y-3 text-sm font-mono">
-                  {demonstracao.encargos.linhas.map((linha: string, idx: number) => (
-                    <div key={idx} className="text-gray-700">
-                      <p>{linha}</p>
+                    {/* DEMONSTRAÇÃO - TEMPO DESCONTADO */}
+                    <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#007A5E] w-full">
+                      <div className="bg-mz-green text-white border-b-2 border-mz-black p-3">
+                        <h3 className="text-sm font-bold tracking-widest uppercase">PERÍODO CONTRIBUTIVO</h3>
+                      </div>
+                      <div className="p-4 space-y-2 font-mono text-sm text-mz-black">
+                        {demonstracao.tempoDescontado.linhas.map((linha: string, idx: number) => (
+                          <div key={idx} className="border-b border-stone-200 pb-1 last:border-0">{linha}</div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                  
-                  <div className="pt-3 border-t-2 border-orange-200 mt-3">
-                    <p className="font-bold text-lg text-orange-700">
-                      💰 Dívida Total: {demonstracao.encargos.dividaTotal.toFixed(2)} MZN
-                    </p>
                   </div>
-                </div>
-              </div>
 
-              {/* DEMONSTRAÇÃO - PRESTAÇÕES */}
-              <div className="bg-purple-50 border border-purple-300 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-purple-900 mb-4">📊 CÁLCULO DE PRESTAÇÕES (AJUSTE DE DÍZIMAS)</h3>
-                
-                <div className="bg-white rounded p-4 border-l-4 border-purple-500 space-y-3 text-sm font-mono">
-                  {demonstracao.prestacoes.linhas.map((linha: string, idx: number) => (
-                    <div key={idx} className="text-gray-700">
-                      <p>{linha}</p>
+                  <div className="space-y-6 w-full">
+                    {/* DEMONSTRAÇÃO - ENCARGOS */}
+                    <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#222222] w-full">
+                      <div className="bg-mz-red text-white p-3 border-b-2 border-mz-black">
+                        <h3 className="text-sm font-bold tracking-widest uppercase">MUTAÇÃO FINANCEIRA (ENCARGOS)</h3>
+                      </div>
+                      <div className="p-4 space-y-2 font-mono text-sm text-mz-black">
+                        {demonstracao.encargos.linhas.map((linha: string, idx: number) => (
+                          <div key={idx} className="border-b border-stone-200 pb-1 last:border-0">{linha}</div>
+                        ))}
+                        <div className="mt-4 pt-4 border-t-2 border-mz-black bg-mz-red/10 p-3">
+                          <p className="font-bold text-lg text-mz-red uppercase tracking-wider flex justify-between">
+                            <span>TOTAL DÍVIDA:</span> 
+                            <span>{demonstracao.encargos.dividaTotal.toFixed(2)} MZN</span>
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                  
-                  <div className="pt-3 border-t-2 border-purple-200 mt-3">
-                    <p className="font-bold text-purple-700">
-                      ✅ Resultado:
-                    </p>
-                    <p className="text-purple-900 font-semibold mt-2">
-                      {demonstracao.prestacoes.fraseF}
-                    </p>
+
+                    {/* DEMONSTRAÇÃO - PRESTAÇÕES */}
+                    <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#222222] w-full">
+                      <div className="bg-stone-800 text-white p-3 border-b-2 border-mz-black flex justify-between content-center">
+                        <h3 className="text-sm font-bold tracking-widest uppercase items-center flex">FIXAÇÃO DE PRESTAÇÕES</h3>
+                      </div>
+                      <div className="p-4 space-y-2 font-mono text-sm text-mz-black">
+                        {demonstracao.prestacoes.linhas.map((linha: string, idx: number) => (
+                          <div key={idx} className="border-b border-stone-200 pb-1 last:border-0">{linha}</div>
+                        ))}
+                        
+                        <div className="mt-4 pt-4 border-t-2 border-mz-black p-3 bg-stone-100 border border-stone-300">
+                          <p className="font-bold uppercase tracking-wider text-xs text-stone-500 mb-1">
+                            Veredito Operacional:
+                          </p>
+                          <p className="font-bold text-mz-black uppercase leading-relaxed">
+                            {demonstracao.prestacoes.fraseF}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* RESUMO */}
-              <div className="bg-indigo-50 border border-indigo-300 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-indigo-900 mb-4">📄 RESUMO</h3>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white p-4 rounded border-l-4 border-blue-500">
-                    <p className="text-xs text-gray-600 mb-1">Tempo de Serviço</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {tempoCalculado.anos}A {tempoCalculado.meses}M {tempoCalculado.dias}D
-                    </p>
-                  </div>
+                {/* RESUMO BRUTALISTA */}
+                <div className="bg-mz-black border-4 border-black p-1 text-white shadow-[6px_6px_0px_#FCD116] mt-8">
+                  <div className="border border-stone-700 p-6">
+                    <h3 className="text-xl font-serif font-bold uppercase tracking-widest mb-6 border-b border-stone-700 pb-2">
+                     MAPA SINÓPTICO DOS ENCARGOS
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div>
+                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1">Tempo Total</p>
+                        <p className="text-xl font-mono text-white">
+                          {tempoCalculado.anos}A {tempoCalculado.meses}M {tempoCalculado.dias}D
+                        </p>
+                      </div>
 
-                  <div className="bg-white p-4 rounded border-l-4 border-yellow-500">
-                    <p className="text-xs text-gray-600 mb-1">Tempo Não Descontado</p>
-                    <p className="text-2xl font-bold text-yellow-600">
-                      {tempoCalculado.tempoNaoDescontado?.anos || 0}A {tempoCalculado.tempoNaoDescontado?.meses || 0}M {tempoCalculado.tempoNaoDescontado?.dias || 0}D
-                    </p>
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded border-l-4 border-orange-500">
-                    <p className="text-xs text-gray-600 mb-1">Total de Encargos/Dívida</p>
-                    <p className="text-2xl font-bold text-orange-600">
-                      {demonstracao.encargos.dividaTotal.toFixed(2)} MZN
-                    </p>
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded border-l-4 border-green-500">
-                    <p className="text-xs text-gray-600 mb-1">1ª Prestação</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {demonstracao.prestacoes.primeiraP.toFixed(2)} MZN
-                    </p>
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded border-l-4 border-purple-500 col-span-2">
-                    <p className="text-xs text-gray-600 mb-1">Restantes Prestações ({formData.numeroPrestacoes - 1})</p>
-                    <p className="text-2xl font-bold text-purple-600">
-                      {demonstracao.prestacoes.valorRestantes.toFixed(2)} MZN
-                    </p>
+                      <div>
+                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1">Tempo Livre</p>
+                        <p className="text-xl font-mono text-mz-yellow">
+                          {tempoCalculado.tempoNaoDescontado?.anos || 0}A {tempoCalculado.tempoNaoDescontado?.meses || 0}M {tempoCalculado.tempoNaoDescontado?.dias || 0}D
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1">Passivo Est.</p>
+                        <p className="text-xl font-mono text-mz-red font-bold">
+                          {demonstracao.encargos.dividaTotal.toFixed(2)}
+                        </p>
+                      </div>
+                      
+                      <div>
+                         <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1">1ª Cota</p>
+                         <p className="text-xl font-mono text-mz-green font-bold">
+                           {demonstracao.prestacoes.primeiraP.toFixed(2)}
+                         </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={handleExportarWord}
-                  className="flex-1 px-4 py-2 border border-green-500 rounded-md shadow-sm text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  📄 Exportar para Word
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  Voltar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  Novo Cálculo
-                </button>
+                <div className="flex flex-col sm:flex-row gap-4 pt-8">
+                  <button
+                    type="button"
+                    onClick={handleExportarWord}
+                    className="flex-1 px-4 py-4 border-4 border-mz-black bg-mz-black text-white font-bold uppercase tracking-widest rounded-none shadow-[4px_4px_0px_#007A5E] hover:bg-stone-800 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex justify-center items-center gap-2"
+                  >
+                    <span>EXPORTAR AUTO WORD</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="flex-[0.5] px-4 py-4 border-2 border-mz-black bg-white text-mz-black font-bold uppercase tracking-widest rounded-none shadow-[4px_4px_0px_#222222] hover:bg-stone-100 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all text-center"
+                  >
+                    NOVO
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-600">
-          <p>Sistema de Contagem de Tempo e Fixação de Encargos</p>
-          <p>© 2026 SDEJT Inhassoro</p>
+        {/* Footer Institucional */}
+        <div className="text-center mt-6 p-4 text-xs font-bold font-mono tracking-widest uppercase text-stone-500">
+          <p>REPÚBLICA DE MOÇAMBIQUE • MINISTÉRIO DA EDUCAÇÃO</p>
+          <p className="mt-1">SDEJT - Inhassoro © {new Date().getFullYear()}</p>
         </div>
       </div>
     </div>
