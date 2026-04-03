@@ -657,7 +657,7 @@ export default function ContagemTempoApp() {
                     {/* DEMONSTRAÇÃO - TEMPO TOTAL */}
                     <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#222222] w-full">
                       <div className="bg-mz-black text-white p-3 border-b-2 border-mz-black">
-                        <h3 className="text-sm font-bold tracking-widest uppercase">CONTAGEM DE TEMPO INTEGRAL</h3>
+                        <h3 className="text-sm font-bold tracking-widest uppercase">Tempo de Serviço do FAE</h3>
                       </div>
                       <div className="p-4 space-y-2 font-mono text-sm text-mz-black">
                         {demonstracao.tempoTotal.linhas.map((linha: string, idx: number) => (
@@ -669,7 +669,7 @@ export default function ContagemTempoApp() {
                     {/* DEMONSTRAÇÃO - TEMPO NÃO DESCONTADO */}
                     <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#222222] w-full">
                       <div className="bg-mz-yellow border-b-2 border-mz-black p-3">
-                        <h3 className="text-sm font-bold text-mz-black tracking-widest uppercase">PERÍODO LIVRE / NÃO DESCONTADO</h3>
+                        <h3 className="text-sm font-bold text-mz-black tracking-widest uppercase">Tempo não descontado</h3>
                       </div>
                       <div className="p-4 space-y-2 font-mono text-sm text-mz-black">
                         {demonstracao.tempoNaoDescontado.linhas.map((linha: string, idx: number) => (
@@ -681,7 +681,7 @@ export default function ContagemTempoApp() {
                     {/* DEMONSTRAÇÃO - TEMPO DESCONTADO */}
                     <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#007A5E] w-full">
                       <div className="bg-mz-green text-white border-b-2 border-mz-black p-3">
-                        <h3 className="text-sm font-bold tracking-widest uppercase">PERÍODO CONTRIBUTIVO</h3>
+                        <h3 className="text-sm font-bold tracking-widest uppercase">Tempo descontado</h3>
                       </div>
                       <div className="p-4 space-y-2 font-mono text-sm text-mz-black">
                         {demonstracao.tempoDescontado.linhas.map((linha: string, idx: number) => (
@@ -695,7 +695,7 @@ export default function ContagemTempoApp() {
                     {/* DEMONSTRAÇÃO - ENCARGOS */}
                     <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#222222] w-full">
                       <div className="bg-mz-red text-white p-3 border-b-2 border-mz-black">
-                        <h3 className="text-sm font-bold tracking-widest uppercase">MUTAÇÃO FINANCEIRA (ENCARGOS)</h3>
+                        <h3 className="text-sm font-bold tracking-widest uppercase">Encargos</h3>
                       </div>
                       <div className="p-4 space-y-2 font-mono text-sm text-mz-black">
                         {demonstracao.encargos.linhas.map((linha: string, idx: number) => (

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Contagem de Tempo</string>
+    <string name="title_activity_main">Contagem de Tempo</string>
+    <string name="package_name">mz.gov.sdejt.contagemtempo</string>
+    <string name="custom_url_scheme">mz.gov.sdejt.contagemtempo</string>
+</resources>
