@@ -67,7 +67,7 @@ export default function ContagemTempoApp() {
 
       // Extrai dados do texto
       const dados = extrairDadosCertidao(text);
-      
+
       setDadosExtraidos({
         nome: dados.nome || '',
         dataInicio: dados.dataInicio || '',
@@ -277,7 +277,7 @@ export default function ContagemTempoApp() {
 
         {/* Card Principal - Brutalist */}
         <div className="bg-white border-4 border-mz-black shadow-[8px_8px_0px_#222222] p-0 relative">
-          
+
           <div className="text-center p-8 border-b-4 border-mz-black bg-mz-green/5">
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-mz-black uppercase tracking-wider mb-2">
               Contagem de Tempo
@@ -309,7 +309,7 @@ export default function ContagemTempoApp() {
                 <h2 className="text-2xl font-serif font-bold text-mz-black uppercase tracking-wider border-b-2 border-mz-black pb-2">
                   Passo 1: Selecionar Método
                 </h2>
-                
+
                 <p className="text-mz-black font-medium mb-8">
                   ESCOLHA O MÉTODO DE ENTRADA DE DADOS:
                 </p>
@@ -348,7 +348,7 @@ export default function ContagemTempoApp() {
                 <h2 className="text-2xl font-serif font-bold text-mz-black uppercase tracking-wider border-b-2 border-mz-black pb-2">
                   Passo 1: Entrada Manual de Datas
                 </h2>
-                
+
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
@@ -430,9 +430,9 @@ export default function ContagemTempoApp() {
                 <h2 className="text-2xl font-serif font-bold text-mz-black uppercase tracking-wider border-b-2 border-mz-black pb-2">
                   Passo 1: Documento PDF
                 </h2>
-                
+
                 <div className="border-4 border-dashed border-mz-black bg-mz-green/5 p-12 text-center cursor-pointer hover:bg-mz-green/10 transition-colors relative"
-                     onClick={() => fileInputRef.current?.click()}>
+                  onClick={() => fileInputRef.current?.click()}>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -441,7 +441,7 @@ export default function ContagemTempoApp() {
                     disabled={loading}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
-                  
+
                   <div className="space-y-4">
                     <p className="text-5xl">📄</p>
                     <p className="text-xl font-bold font-serif text-mz-black uppercase tracking-wider">
@@ -477,7 +477,7 @@ export default function ContagemTempoApp() {
                 <h2 className="text-2xl font-serif font-bold text-mz-black uppercase tracking-wider border-b-2 border-mz-black pb-2">
                   Passo 2: Dados Administrativos
                 </h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-mz-black uppercase tracking-wide mb-2">
@@ -652,7 +652,7 @@ export default function ContagemTempoApp() {
                 </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-                  
+
                   <div className="space-y-6 w-full">
                     {/* DEMONSTRAÇÃO - TEMPO TOTAL */}
                     <div className="bg-white border-2 border-mz-black shadow-[4px_4px_0px_#222222] w-full">
@@ -703,7 +703,7 @@ export default function ContagemTempoApp() {
                         ))}
                         <div className="mt-4 pt-4 border-t-2 border-mz-black bg-mz-red/10 p-3">
                           <p className="font-bold text-lg text-mz-red uppercase tracking-wider flex justify-between">
-                            <span>TOTAL DÍVIDA:</span> 
+                            <span>TOTAL DÍVIDA:</span>
                             <span>{demonstracao.encargos.dividaTotal.toFixed(2)} MZN</span>
                           </p>
                         </div>
@@ -719,7 +719,7 @@ export default function ContagemTempoApp() {
                         {demonstracao.prestacoes.linhas.map((linha: string, idx: number) => (
                           <div key={idx} className="border-b border-stone-200 pb-1 last:border-0">{linha}</div>
                         ))}
-                        
+
                         <div className="mt-4 pt-4 border-t-2 border-mz-black p-3 bg-stone-100 border border-stone-300">
                           <p className="font-bold uppercase tracking-wider text-xs text-stone-500 mb-1">
                             Veredito Operacional:
@@ -737,36 +737,43 @@ export default function ContagemTempoApp() {
                 <div className="bg-mz-black border-4 border-black p-1 text-white shadow-[6px_6px_0px_#FCD116] mt-8">
                   <div className="border border-stone-700 p-6">
                     <h3 className="text-xl font-serif font-bold uppercase tracking-widest mb-6 border-b border-stone-700 pb-2">
-                     MAPA SINÓPTICO DOS ENCARGOS
+                      MAPA RESUMO
                     </h3>
-                    
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                       <div>
-                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1">Tempo Total</p>
+                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1 leading-tight">Tempo Total no<br />Aparelho de Estado</p>
                         <p className="text-xl font-mono text-white">
                           {tempoCalculado.anos}A {tempoCalculado.meses}M {tempoCalculado.dias}D
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1">Tempo Livre</p>
+                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1 leading-tight">Tempo nao<br />Descontado</p>
                         <p className="text-xl font-mono text-mz-yellow">
                           {tempoCalculado.tempoNaoDescontado?.anos || 0}A {tempoCalculado.tempoNaoDescontado?.meses || 0}M {tempoCalculado.tempoNaoDescontado?.dias || 0}D
                         </p>
                       </div>
-                      
+
                       <div>
-                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1">Passivo Est.</p>
+                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1 leading-tight">Total de<br />Encargos</p>
                         <p className="text-xl font-mono text-mz-red font-bold">
                           {demonstracao.encargos.dividaTotal.toFixed(2)}
                         </p>
                       </div>
-                      
+
                       <div>
-                         <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1">1ª Cota</p>
-                         <p className="text-xl font-mono text-mz-green font-bold">
-                           {demonstracao.prestacoes.primeiraP.toFixed(2)}
-                         </p>
+                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1 leading-tight">1 Prestacao</p>
+                        <p className="text-xl font-mono text-mz-green font-bold">
+                          {demonstracao.prestacoes.primeiraP.toFixed(2)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-[10px] uppercase text-stone-400 font-bold tracking-widest mb-1 leading-tight">Restantes<br />Prestacoes</p>
+                        <p className="text-xl font-mono text-white font-bold">
+                          {demonstracao.prestacoes.valorRestantes.toFixed(2)} <span className="text-[10px] text-stone-400">({demonstracao.prestacoes.numeroPrestacoes - 1}x)</span>
+                        </p>
                       </div>
                     </div>
                   </div>
