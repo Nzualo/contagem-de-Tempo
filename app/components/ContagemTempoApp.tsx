@@ -264,10 +264,10 @@ export default function ContagemTempoApp() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-100 p-4 sm:p-6 lg:p-8 font-sans relative overflow-x-hidden">
+    <div className="min-h-screen bg-stone-100 p-4 sm:p-6 lg:p-8 font-sans relative overflow-x-hidden" style={{ backgroundImage: "radial-gradient(#d1d5db 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
       {/* BACKGROUND INSTITUCIONAL (Marca de Água) */}
       <div
-        className="fixed inset-0 z-0 opacity-10 pointer-events-none bg-center bg-cover grayscale"
+        className="fixed inset-0 z-0 opacity-20 pointer-events-none bg-center bg-cover grayscale mix-blend-multiply transition-opacity duration-1000"
         style={{ backgroundImage: "url('/instituicao.png')" }}
       ></div>
 
